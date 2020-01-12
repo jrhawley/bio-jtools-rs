@@ -64,6 +64,16 @@ fn main() {
     )
     .subcommand(SubCommand::with_name("kspec")
         .about("Calculate the k-mer spectra of an HTS file")
+        .arg(Arg::with_name("hts")
+            .help("HTS file(s) to calculate spectra from")
+            .multiple(true)
+            .required(true)
+        )
+        .arg(Arg::with_name("k")
+            .help("Length of k-mer")
+            .multiple(true)
+            .required(true)
+        )
     )
     .get_matches();
 
