@@ -1,4 +1,5 @@
-use clap::{App, Arg, crate_version, SubCommand, values_t};
+use clap::{App, Arg, crate_version, SubCommand, value_t};
+mod utils;
 
 macro_rules! crate_description {
     () => {
@@ -7,7 +8,7 @@ macro_rules! crate_description {
 }
 
 fn main() {
-   let matches = App::new("bio-jtools")
+   let _matches = App::new("bio-jtools")
     .version(crate_version!())
     .about(crate_description!())
     .subcommand(SubCommand::with_name("jaccard")
@@ -28,8 +29,7 @@ fn main() {
     .subcommand(SubCommand::with_name("info")
         .about("Extract and print metadata about an HTS file")
         .arg(Arg::with_name("hts")
-            .help("HTS file(s) to extract metadata from")
-            .multiple(true)
+            .help("HTS file to extract metadata from")
             .required(true)
         )
     )
@@ -75,5 +75,8 @@ fn main() {
     )
     .get_matches();
 
-    println!("Hello, world!");
+    if let Some(o) = _matches.subcommand_matches("info") {
+        let hts = value_t!(o.value_of("hts"), String).unwrap_or_else(|e| e.exit());
+        println!("{}", utils::detect_filetype(&hts));
+    }
 }
