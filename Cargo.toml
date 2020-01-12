@@ -3,7 +3,7 @@ name = "bio-jtools"
 version = "2019.1.12"
 authors = ["James Hawley <jamesrichardhawley@gmail.com>"]
 edition = "2018"
-description = "A suite of bioinformatics tools for personal use"
+description = "A suite of bioinformatics tools for interacting with high throughput sequencing (HTS) data"
 
 [dependencies.clap]
 version = "2"
