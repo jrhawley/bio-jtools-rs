@@ -1,5 +1,6 @@
 use clap::{App, Arg, crate_version, SubCommand, value_t};
 mod utils;
+mod fastx;
 
 macro_rules! crate_description {
     () => {
@@ -78,5 +79,6 @@ fn main() {
     if let Some(o) = _matches.subcommand_matches("info") {
         let hts = value_t!(o.value_of("hts"), String).unwrap_or_else(|e| e.exit());
         println!("{}", utils::detect_filetype(&hts));
+        fastx::fx_info(&hts);
     }
 }
