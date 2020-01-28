@@ -1,15 +1,26 @@
+pub fn file_is_zipped(path: &str) -> bool
+{
+    let p = path.to_lowercase();
+    if p.ends_with(".gz") {
+        return true;
+    }
+    if p.ends_with(".bz2") {
+        return true;
+    }
+    return false;
+}
+
+
 pub fn detect_filetype(path: &str) -> String
 {
     let mut p = path.to_lowercase();
-    let mut zipped = false;
+    let mut zipped = file_is_zipped(path);
     let ext: &str;
     if p.ends_with(".gz") {
-        zipped = true;
         for _n in 0..3 {
             p.pop();
         }
     } else if p.ends_with(".bz2") {
-        zipped = true;
         for _n in 0..4 {
             p.pop();
         }
