@@ -1,6 +1,7 @@
-use clap::{App, Arg, crate_version, SubCommand, value_t};
+use clap::{App, Arg, crate_version, SubCommand, value_t, values_t};
 mod utils;
 mod fastx;
+use std::path::Path;
 
 macro_rules! crate_description {
     () => {
@@ -9,7 +10,7 @@ macro_rules! crate_description {
 }
 
 fn main() {
-   let _matches = App::new("bio-jtools")
+    let _matches = App::new("bio-jtools")
     .version(crate_version!())
     .about(crate_description!())
     .subcommand(SubCommand::with_name("jaccard")
@@ -85,6 +86,21 @@ fn main() {
 
     if let Some(o) = _matches.subcommand_matches("info") {
         let hts = value_t!(o.value_of("hts"), String).unwrap_or_else(|e| e.exit());
+        // check that supplied HTS file exists
+        if !Path::new(&hts).exists() {
+            println!("{} does not exist. Exiting.", &hts);
+            return;
+        }
+        // run fx_info on supplied HTS file
         fastx::fx_info(&hts);
+    } else if let Some(o) = _matches.subcommand_matches("jaccard") {
+        let beds = values_t!(o.values_of("bed"), String).unwrap_or_else(|e| e.exit());
+        // check that supplied BED files exists
+        for b in beds {
+            if !Path::new(&b).exists() {
+                println!("{} does not exist. Exiting.", &b);
+                return;
+            }
+        }
     }
 }
