@@ -1,6 +1,7 @@
 use clap::{App, Arg, crate_version, SubCommand, value_t, values_t};
 mod utils;
 mod fastx;
+mod interval;
 use std::path::Path;
 
 macro_rules! crate_description {
@@ -96,11 +97,14 @@ fn main() {
     } else if let Some(o) = _matches.subcommand_matches("jaccard") {
         let beds = values_t!(o.values_of("bed"), String).unwrap_or_else(|e| e.exit());
         // check that supplied BED files exists
-        for b in beds {
+        for b in &beds {
             if !Path::new(&b).exists() {
                 println!("{} does not exist. Exiting.", &b);
                 return;
             }
+        }
+        if beds.len() == 2 {
+            interval::jaccard_path(&beds[0], &beds[1]);
         }
     }
 }
