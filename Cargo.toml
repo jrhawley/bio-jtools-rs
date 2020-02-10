@@ -12,6 +12,7 @@ categories = ["command-line-utilities", "science"]
 
 [dependencies]
 bio = "0.30.0"
+fastq = "0.6.0"
 
 [dependencies.clap]
 version = "2"
