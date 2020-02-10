@@ -107,7 +107,7 @@ dependencies = [
 
 [[package]]
 name = "bio-jtools"
-version = "2019.1.12"
+version = "2019.2.10"
 dependencies = [
  "bio 0.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
