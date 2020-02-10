@@ -4,6 +4,11 @@ version = "2019.1.12"
 authors = ["James Hawley <jamesrichardhawley@gmail.com>"]
 edition = "2018"
 description = "A suite of bioinformatics tools for interacting with high throughput sequencing (HTS) data"
+license = "MIT"
+repository = "https://github.com/jrhawley/bio-jtools-rs/"
+homepage = "https://github.com/jrhawley/bio-jtools-rs/"
+readme = "README.md"
+categories = ["bioinformatics"]
 
 [dependencies]
 bio = "0.30.0"
