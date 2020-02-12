@@ -11,7 +11,7 @@ macro_rules! crate_description {
 }
 
 fn main() {
-    let _matches = App::new("bio-jtools")
+    let _matches = App::new("bjt")
     .version(crate_version!())
     .about(crate_description!())
     .subcommand(SubCommand::with_name("jaccard")
