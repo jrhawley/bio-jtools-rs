@@ -1,6 +1,6 @@
 [package]
 name = "bio-jtools"
-version = "2019.2.11"
+version = "2019.2.12"
 authors = ["James Hawley <jamesrichardhawley@gmail.com>"]
 edition = "2018"
 description = "A suite of bioinformatics tools for interacting with high throughput sequencing (HTS) data"
@@ -18,3 +18,8 @@ fastq = "0.6.0"
 version = "2"
 default-features = true
 features = [ "yaml" ]
+
+[[bin]]
+name = "bjt"
+path = "src/main.rs"
+
