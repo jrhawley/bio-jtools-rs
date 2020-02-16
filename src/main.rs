@@ -53,6 +53,12 @@ fn main() {
             .help("Text file containing query name IDs to be removed")
             .required(true)
         )
+        .arg(Arg::with_name("keep")
+             .short("k")
+             .long("keep")
+             .help("Keep only these IDs, instead of the default which removes them")
+             .required(false)
+        )
         .arg(Arg::with_name("output")
             .help("Output file. If not given, print to STDOUT")
         )
@@ -65,6 +71,7 @@ fn main() {
         )
         .arg(Arg::with_name("outdir")
             .help("New path for input directory")
+            .required(false)
         )
         .arg(Arg::with_name("type")
             .help("New path for input directory")
@@ -106,5 +113,11 @@ fn main() {
         if beds.len() == 2 {
             interval::jaccard_path(&beds[0], &beds[1]);
         }
+    } else if let Some(o) = _matches.subcommand_matches("org") {
+        unimplemented!();
+    } else if let Some(o) = _matches.subcommand_matches("kspec") {
+        unimplemented!();
+    } else if let Some(o) = _matches.subcommand_matches("filter") {
+        unimplemented!();
     }
 }
