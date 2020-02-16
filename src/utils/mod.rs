@@ -55,7 +55,7 @@ pub fn detect_filetype(path: &str) -> String
     } else if p.ends_with(".bedpe") {
         ext = "BEDPE";
     } else {
-        ext = "Unrecognized";
+        ext = "Unrecognized file type";
     }
 
     if zipped {

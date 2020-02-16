@@ -99,8 +99,17 @@ fn main() {
             println!("{} does not exist. Exiting.", &hts);
             return;
         }
-        // run fx_info on supplied HTS file
-        fastx::fx_info(&hts);
+        let ftype = utils::detect_filetype(&hts).to_string();
+        // print input file type
+        println!("{}", ftype);
+
+        match ftype.as_str() {
+            "FASTQ" | "Compressed FASTQ" => fastx::info(&hts),
+            _ => unimplemented!(),
+        }
+
+        // run info on supplied FASTQ
+        
     } else if let Some(o) = _matches.subcommand_matches("jaccard") {
         let beds = values_t!(o.values_of("bed"), String).unwrap_or_else(|e| e.exit());
         // check that supplied BED files exists
