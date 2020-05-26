@@ -94,17 +94,16 @@ fn main() {
 
     if let Some(o) = _matches.subcommand_matches("info") {
         let hts = value_t!(o.value_of("hts"), String).unwrap_or_else(|e| e.exit());
+        let hts_path = Path::new(&hts);
         // check that supplied HTS file exists
-        if !Path::new(&hts).exists() {
+        if !hts_path.exists() {
             println!("{} does not exist. Exiting.", &hts);
             return;
         }
-        let ftype = utils::detect_filetype(&hts).to_string();
-        // print input file type
-        println!("{}", ftype);
+        let ftype = utils::detect_filetype(&hts_path);
 
-        match ftype.as_str() {
-            "FASTQ" | "Compressed FASTQ" => fastx::info(&hts),
+        match ftype {
+            "FASTQ" => fastx::info(hts_path),
             _ => unimplemented!(),
         }
 
