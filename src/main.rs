@@ -1,5 +1,6 @@
 use clap::{App, Arg, crate_version, SubCommand, value_t, values_t};
 mod utils;
+mod data;
 mod fastx;
 mod interval;
 use std::path::Path;
@@ -123,7 +124,8 @@ fn main() {
             interval::jaccard_path(&beds[0], &beds[1]);
         }
     } else if let Some(o) = _matches.subcommand_matches("org") {
-        unimplemented!();
+        let dir = valu_t!(o.value_of("dir"), String).unwrap_or_else(|e| e.exit());
+        data::organize(dir);
     } else if let Some(o) = _matches.subcommand_matches("kspec") {
         unimplemented!();
     } else if let Some(o) = _matches.subcommand_matches("filter") {
