@@ -1,66 +1,31 @@
-pub fn file_is_zipped(path: &str) -> bool
-{
-    let p = path.to_lowercase();
-    if p.ends_with(".gz") {
-        return true;
+use std::path::Path;
+
+pub fn file_is_zipped(path: &Path) -> bool {
+    let ext = path.extension().unwrap().to_str().unwrap();
+    match ext {
+        "gz" | "bz2" => true,
+        _ => false,
     }
-    if p.ends_with(".bz2") {
-        return true;
-    }
-    return false;
 }
 
-
-pub fn detect_filetype(path: &str) -> String
-{
-    let mut p = path.to_lowercase();
-    let mut zipped = file_is_zipped(path);
-    let ext: &str;
-    if p.ends_with(".gz") {
-        for _n in 0..3 {
-            p.pop();
-        }
-    } else if p.ends_with(".bz2") {
-        for _n in 0..4 {
-            p.pop();
-        }
-    };
-
-    if p.ends_with(".sam") {
-        ext = "SAM";
-    } else if p.ends_with(".bam") {
-        ext = "SAM";
-        zipped = true;
-    } else if p.ends_with(".cram") {
-        ext = "CRAM";
-    } else if p.ends_with(".fasta") {
-        ext = "FASTA";
-    } else if p.ends_with(".fastq") {
-        ext = "FASTQ";
-    } else if p.ends_with(".vcf") {
-        ext = "VCF";
-    } else if p.ends_with(".bcf") {
-        ext = "VCF";
-        zipped = true;
-    } else if p.ends_with(".maf") {
-        ext = "MAF";
-    } else if p.ends_with(".tbx") {
-        ext = "TABIX";
-    } else if p.ends_with(".gtf") {
-        ext = "TABIX";
-    } else if p.ends_with(".gff") {
-        ext = "TABIX";
-    } else if p.ends_with(".bed") {
-        ext = "BED";
-    } else if p.ends_with(".bedpe") {
-        ext = "BEDPE";
+pub fn detect_filetype(path: &Path) -> &str {
+    let stem: &Path;
+    if file_is_zipped(path) {
+        stem = Path::new(path.file_stem().unwrap());
     } else {
-        ext = "Unrecognized file type";
+        stem = path;
     }
 
-    if zipped {
-        return format!("Compressed {}", ext);
-    } else {
-        return format!("{}", ext);
+    match stem.extension().unwrap().to_str().unwrap() {
+        "bam" | "sam" => "SAM",
+        "cram" => "CRAM",
+        "fasta" => "FASTA",
+        "fastq" => "FASTQ",
+        "vcf" | "bcf" => "VCF",
+        "maf" => "MAF",
+        "tbx" | "gff" | "gtf" => "TABIX",
+        "bed" => "BED",
+        "bedpe" => "BEDPE",
+        _ => "Unrecognized",
     }
 }
