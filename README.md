@@ -8,6 +8,26 @@ A suite of bioinformatics tools for interacting with high throughput sequencing 
 Extract and print metadata about an HTS file.
 For FASTQs, this includes number of bases, number of records, and all the instruments the records come from.
 
+### filter
+
+Filter an HTS file by its query names.
+**Not currently implemented**.
+
+### jaccard
+
+Calculate the Jaccard index for each pair in a set of BED files.
+**Not currently implemented**.
+
+### kspec
+
+Calculate the k-mer spectra of an HTS file.
+**Not currently implemented**.
+
+### org
+
+Organize a batch of raw sequencing data.
+**Not currently implemented**.
+
 ## Benchmarking
 
 Benchmarks on run in a Windows 10 computer, Intel i5 750 @ 2.67 GHz processor with 12 GB of RAM.
