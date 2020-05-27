@@ -5,7 +5,7 @@ A suite of bioinformatics tools for interacting with high throughput sequencing 
 
 ### info
 
-Provide information about an HTS file.
+Extract and print metadata about an HTS file.
 For FASTQs, this includes number of bases, number of records, and all the instruments the records come from.
 
 ## Benchmarking
