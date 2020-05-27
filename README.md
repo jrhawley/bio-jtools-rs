@@ -1,6 +1,13 @@
 # bio-jtools-rs
 A suite of bioinformatics tools for interacting with high throughput sequencing (HTS) data, written entirely in Rust
 
+## Suite
+
+### info
+
+Provide information about an HTS file.
+For FASTQs, this includes number of bases, number of records, and all the instruments the records come from.
+
 ## Benchmarking
 
 Benchmarks on run in a Windows 10 computer, Intel i5 750 @ 2.67 GHz processor with 12 GB of RAM.
