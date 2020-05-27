@@ -1,6 +1,8 @@
 # bio-jtools-rs
 A suite of bioinformatics tools for interacting with high throughput sequencing (HTS) data, written entirely in Rust
 
+![Crates.io](https://img.shields.io/crates/v/bio-jtools)
+
 ## Suite
 
 ### info
