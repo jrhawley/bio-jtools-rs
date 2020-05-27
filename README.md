@@ -31,9 +31,9 @@ Organize a batch of raw sequencing data.
 ## Benchmarking
 
 Benchmarks on run in a Windows 10 computer, Intel i5 750 @ 2.67 GHz processor with 12 GB of RAM.
-Times are listed +/- standard deviation.
+Times are listed +/- standard deviation, using `hyperfine --warmup 2`.
 
-`hyperfine --warmup 2 'bjt info <fq>'`:
+### info
 
 | File | # Reads | t<sub>gzip</sub> | t<sub>plain</sub> |
 | ---------------------- | ------- | -------------------- | --------------------- |
