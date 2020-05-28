@@ -1,26 +1,32 @@
-// use bio::data_structures::interval_tree::IntervalTree;
-// use bio::utils::Interval;
-use bio::io::bed;
+use rust_lapper::{Interval, Lapper};
+use std::path::Path;
+// use std::cmp;
+use std::fs::File;
+use std::io::{self, BufRead};
 
-pub fn jaccard_path(_a: &str, _b: &str)
-{
-    let mut reader_a = bed::Reader::from_file(_a).expect("Error reading file.");
-    let mut reader_b = bed::Reader::from_file(_b).expect("Error reading file.");
-    let mut records_a = reader_a.records();
-    let mut records_b = reader_b.records();
-    // Assuming sorted, starting with first record in each file
-    let mut rec_a = records_a.next().unwrap().ok().expect("Error reading record.");
-    let mut rec_b = records_b.next().unwrap().ok().expect("Error reading record.");
-    // loop {
-    //     println!("{}\t{}\t{}", rec_a.chrom(), rec_a.start(), rec_a.end());
-    //     if rec_a.chrom() > rec_b.chrom() {
-    //         rec_b = records_b.next().unwrap().ok().expect("Error reading record.");
-    //     } else {
-    //         rec_a = records_a.next().unwrap().ok().expect("Error reading record.");
-    //     }
-    //     break;
-    // }
-    // return IntervalTree::new();
+type Iv = Interval<u32>;
+
+fn line_to_intvl(line: Result<String, io::Error>) -> Iv {
+    let l = line.unwrap();
+    let mut tabsplit = l.split(|c| c == '\t');
+    let chrom = tabsplit.next().unwrap();
+    let start: u32 = tabsplit.next().unwrap().parse::<u32>().unwrap();
+    let end: u32 = tabsplit.next().unwrap().parse::<u32>().unwrap();
+    Interval{start: start, stop: end, val: 0}
+}
+
+pub fn jaccard_path(a: &Path, b: &Path) -> (u32, u32, f64) {
+    // naive implementation: load both files into memory and intersect them
+    let file_a = File::open(a).unwrap();
+    let file_b = File::open(b).unwrap();
+    let data_a: Vec<Iv> = io::BufReader::new(file_a).lines().map(|l| line_to_intvl(l)).collect();
+    let data_b: Vec<Iv> = io::BufReader::new(file_b).lines().map(|l| line_to_intvl(l)).collect();
+
+    let lap_a = Lapper::new(data_a);
+    let lap_b = Lapper::new(data_b);
+    let (union, intersect) = lap_a.union_and_intersect(&lap_b);
+    let j = f64::from(intersect) / f64::from(union);
+    return (intersect, union, j);
 }
 
 // fn jaccard(a: IntervalTree, b: IntervalTree) -> f32
@@ -28,6 +34,6 @@ pub fn jaccard_path(_a: &str, _b: &str)
 //     return 0.0f32;
 // }
 
-// pub fn multijaccard(beds: [&str])
+// pub fn multijaccard()
 // {
 // }

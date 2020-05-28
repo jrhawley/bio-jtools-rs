@@ -119,15 +119,21 @@ fn main() {
         }
     } else if let Some(o) = _matches.subcommand_matches("jaccard") {
         let beds = values_t!(o.values_of("bed"), String).unwrap_or_else(|e| e.exit());
+        let bed_paths: Vec<&Path> = beds.iter().map(|b| Path::new(b)).collect();
         // check that supplied BED files exists
-        for b in &beds {
-            if !Path::new(&b).exists() {
-                println!("{} does not exist. Exiting.", &b);
+        for b in &bed_paths {
+            if !b.exists() {
+                println!("{:?} does not exist. Exiting.", b);
                 return;
             }
         }
-        if beds.len() == 2 {
-            interval::jaccard_path(&beds[0], &beds[1]);
+        match bed_paths.len() {
+            1 => println!("Only 1 interval file, which is obviously self-similar."),
+            2 => {
+                let (i, u, j) = interval::jaccard_path(&bed_paths[0], &bed_paths[1]);
+                println!("{}, {}, {}", i, u, j);
+            },
+            _ => unimplemented!()
         }
     } else if let Some(o) = _matches.subcommand_matches("org") {
         unimplemented!();
