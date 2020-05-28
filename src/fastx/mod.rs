@@ -5,7 +5,7 @@ use std::path::Path;
 use std::str;
 use std::string::String;
 
-pub fn info<'a>(path: &Path) {
+pub fn info(path: &Path) {
     // values to keep and display
     let mut n_records: usize = 0; // number of records
     let mut n_bases: usize = 0; // number of bases
