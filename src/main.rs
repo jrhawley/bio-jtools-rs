@@ -1,5 +1,6 @@
 use clap::{crate_version, value_t, values_t, App, Arg, SubCommand};
 mod fastx;
+mod align;
 mod interval;
 mod utils;
 use std::path::Path;
@@ -115,6 +116,7 @@ fn main() {
 
         match ftype {
             "FASTQ" => fastx::info(hts_path),
+            "BAM" => align::info(hts_path),
             _ => unimplemented!(),
         }
     } else if let Some(o) = _matches.subcommand_matches("jaccard") {
