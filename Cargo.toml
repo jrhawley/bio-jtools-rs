@@ -13,6 +13,8 @@ categories = ["command-line-utilities", "science"]
 [dependencies]
 bio = "0.30.0"
 needletail = "0.3.2"
+chrono = "0.4.11"
+regex = "1.3.9"
 
 [dependencies.clap]
 version = "2"

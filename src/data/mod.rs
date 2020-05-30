@@ -1,32 +1,18 @@
-use std::fs::rename;
-use chrono::DateTime;
 use regex::Regex;
+// use std::fs::rename;
+use std::path::Path;
 
-struct SeqDir {
-    date: &str,
-    instrument: &str,
-    run: &str,
+type Date = chrono::NaiveDate;
+
+#[derive(Debug)]
+struct SeqDir<'a> {
+    date: Date,
+    instrument: &'a str,
+    run: u16,
     position: char,
-    flowcell: &str,
-    date_submitted: DateTime,
-    date_received: DateTime,
-    description: &str
-}
-
-let reserved_dirnames = vec!["Reports", "FASTQs", "Trimmed", "Aligned", "Peaks", "Contacts"];
-let reserved_filenames = vec!["README.md", "cluster.yaml", "Snakefile", "setup.log", "config.tsv"];
-let fq_regex = Regex::new(r"^([A-Za-z0-9-_]+)_S([1-9][0-9]?)_L00(\d)_(I[1-3]|R[1-3])_001\.f(ast)?q(\.gz)?$").unwrap();
-let dir_regex = Regex::new(r"^([0-9]{2})(0?[1-9]|1[012])(0[1-9]|[12]\d|3[01])_(\w{6})_(\d{4})_(A|B)(\w{9})(.*)?/?$").unwrap();
-
-fn seqdir_from_path (dirname: &str) -> SeqDir
-{
-    cap = dir_regex.captures_iter(dirname);
-    println!("{}{}{}", &cap[1], &cap[2], &cap[3]);
-    // let date = DateTime::parse_from_str(&cap[1])
-    // let seqdir = SeqDir::new(
-    //     date = 
-    // )
-    return SeqDir::new();
+    flowcell: &'a str,
+    date_submitted: Date,
+    description: &'a str,
 }
 
 fn create_readme(seq: SeqDir, outfile: &str)
@@ -55,8 +41,17 @@ fn correct_sample_name(name: &str)
 }
 
 
-pub fn organize(_indir: &str, _outdir: &str, _seqtype: &str)
-{
-    // record the steps take during setup
-    seqdir_from_path(_indir);
+pub fn organize(indir: &Path, outdir: &Path, seqtype: &str) {
+    let reserved_dirnames = vec!["Reports", "FASTQs", "Trimmed", "Aligned", "Peaks", "Contacts"];
+    let reserved_filenames = vec!["README.md", "cluster.yaml", "Snakefile", "setup.log", "config.tsv"];
+    let fq_regex = Regex::new(r"^([A-Za-z0-9-_]+)_S([1-9][0-9]?)_L00(\d)_(I[1-3]|R[1-3])_001\.f(ast)?q(\.gz)?$").unwrap();
+    let dir_regex = Regex::new(r"^([0-9]{2})(0?[1-9]|1[012])(0[1-9]|[12]\d|3[01])_(\w{3,})_(\d{4})_(A|B)(\w{9})(.*)?").unwrap();
+    let dir_stem = indir.file_stem().unwrap().to_str().unwrap();
+    // extract flowcell information from directory name
+    let cap = dir_regex.captures(dir_stem).unwrap();
+    let date = Date::parse_from_str(
+        &format!("{}{}{}", cap.get(1).unwrap().as_str(), cap.get(2).unwrap().as_str(), cap.get(3).unwrap().as_str()),
+        "%y%m%d"
+    ).unwrap();
+    println!("{}", date);
 }
