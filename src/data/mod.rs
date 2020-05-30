@@ -11,7 +11,6 @@ struct SeqDir<'a> {
     run: u16,
     position: char,
     flowcell: &'a str,
-    date_submitted: Date,
     description: &'a str,
 }
 
@@ -41,7 +40,7 @@ fn correct_sample_name(name: &str)
 }
 
 
-pub fn organize(indir: &Path, outdir: &Path, seqtype: &str) {
+pub fn organize(indir: &Path, seqtype: &str) {
     let reserved_dirnames = vec!["Reports", "FASTQs", "Trimmed", "Aligned", "Peaks", "Contacts"];
     let reserved_filenames = vec!["README.md", "cluster.yaml", "Snakefile", "setup.log", "config.tsv"];
     let fq_regex = Regex::new(r"^([A-Za-z0-9-_]+)_S([1-9][0-9]?)_L00(\d)_(I[1-3]|R[1-3])_001\.f(ast)?q(\.gz)?$").unwrap();
@@ -53,5 +52,14 @@ pub fn organize(indir: &Path, outdir: &Path, seqtype: &str) {
         &format!("{}{}{}", cap.get(1).unwrap().as_str(), cap.get(2).unwrap().as_str(), cap.get(3).unwrap().as_str()),
         "%y%m%d"
     ).unwrap();
+    let sd = SeqDir{
+        date: date,
+        instrument: cap.get(4).unwrap().as_str(),
+        run: cap.get(5).unwrap().as_str().parse::<u16>().unwrap(),
+        position: cap.get(6).unwrap().as_str().parse::<char>().unwrap(),
+        flowcell: cap.get(7).unwrap().as_str(),
+        description: cap.get(8).unwrap().as_str(),
+    };
+    println!("{:?}", sd);
     println!("{}", date);
 }
