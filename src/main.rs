@@ -1,19 +1,13 @@
-use clap::{crate_version, value_t, values_t, App, Arg, SubCommand};
+use clap::{value_t, values_t, App, Arg, SubCommand};
 mod fastx;
 mod interval;
 mod utils;
 use std::path::Path;
 
-macro_rules! crate_description {
-    () => {
-        env!("CARGO_PKG_DESCRIPTION")
-    };
-}
-
 fn main() {
-    let _matches = App::new("bio-jtools")
-        .version(crate_version!())
-        .about(crate_description!())
+    let _matches = App::new(env!("CARGO_PKG_NAME"))
+        .version(env!("CARGO_PKG_VERSION"))
+        .about(env!("CARGO_PKG_DESCRIPTION"))
         .subcommand(
             SubCommand::with_name("jaccard")
                 .about("Calculate the Jaccard index for each pair in a set of BED files")
