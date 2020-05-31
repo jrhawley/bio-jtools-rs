@@ -381,6 +381,7 @@ pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
         );
     }
     // extract sample information from FASTQs, reorganize
-    println!("Extracting sample information");
+    println!("Extracting sample information...");
     create_config(&sd);
+    println!("Done.");
 }
