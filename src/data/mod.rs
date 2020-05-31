@@ -288,7 +288,7 @@ fn mv_to_dir(file: &Path, dir: &Path) {
     rename(file, dir.join(file.file_name().unwrap())).expect("Failed to move file.");
 }
 
-pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
+pub fn organize(indir: &Path, seqtype: &str, dryrun: bool, verbose: bool) {
     let reserved_dirnames = vec!["Reports", "FASTQs", "Trimmed", "Aligned"];
     let reserved_filenames = vec!["README.md", "Snakefile", "cluster.yaml", "config.tsv"];
     let dir_regex = Regex::new(
@@ -318,7 +318,9 @@ pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
         description: cap.get(8).unwrap().as_str(),
     };
     // create non-existant reserved files
-    println!("Creating files...");
+    if verbose {
+        println!("Creating files...");
+    }
     for f in &reserved_filenames {
         let p = indir.join(Path::new(&f));
         if !p.as_path().exists() {
@@ -330,7 +332,9 @@ pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
         }
     }
     // create non-existant reserved directories
-    println!("Creating directories...");
+    if verbose {
+        println!("Creating directories...");
+    }
     for d in &reserved_dirnames {
         let p = indir.join(Path::new(&d));
         if !p.as_path().exists() {
@@ -342,7 +346,9 @@ pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
         }
     }
     // find and relocate FASTQs, if necessary
-    println!("Moving sequencing files...");
+    if verbose {
+        println!("Moving sequencing files...");
+    }
     for entry in WalkDir::new(indir).into_iter().filter_map(|e| e.ok()) {
         let entry_path = entry.path();
         // don't move directories
@@ -371,17 +377,23 @@ pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
         if !dryrun {
             mv_to_dir(entry_path, destdir.as_path());
         }
-        println!(
-            "  {} -> {}",
-            entry_path.display(),
-            destdir
-                .as_path()
-                .join(entry_path.file_name().unwrap())
-                .display()
-        );
+        if verbose {
+            println!(
+                "  {} -> {}",
+                entry_path.display(),
+                destdir
+                    .as_path()
+                    .join(entry_path.file_name().unwrap())
+                    .display()
+            );
+        }
     }
     // extract sample information from FASTQs, reorganize
-    println!("Extracting sample information...");
+    if verbose {
+        println!("Extracting sample information...");
+    }
     create_config(&sd);
-    println!("Done.");
+    if verbose {
+        println!("Done.");
+    }
 }

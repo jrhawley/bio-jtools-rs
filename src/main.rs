@@ -1,8 +1,8 @@
 use clap::{value_t, values_t, App, Arg, SubCommand};
+mod data;
 mod fastx;
 mod interval;
 mod utils;
-mod data;
 use std::path::Path;
 
 fn main() {
@@ -86,6 +86,13 @@ fn main() {
                         .long("dryrun")
                         .takes_value(false)
                         .help("Only show what steps are going to be performed"),
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .short("v")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("Show verbose output"),
                 ),
         )
         .subcommand(
@@ -131,14 +138,17 @@ fn main() {
         let seqtype = value_t!(o.value_of("type"), String).unwrap_or_else(|e| e.exit());
         let indir = Path::new(&dir);
         let dryrun = o.is_present("dryrun");
+        let mut verbose = o.is_present("verbose");
+        // if dryrun is flagged, set verbose automatically
+        verbose = verbose || dryrun;
         // if !indir.exists() {
         //     println!("{} does not exist. Exiting.", indir.display());
         // }
         // if !indir.is_dir() {
         //     println!("{} is not a directory. Exiting.", indir.display());
         // } else {
-            data::organize(indir, &seqtype, dryrun);
-        // }
+        data::organize(indir, &seqtype, dryrun, verbose);
+    // }
     } else if let Some(o) = _matches.subcommand_matches("kspec") {
         unimplemented!();
     } else if let Some(o) = _matches.subcommand_matches("filter") {
