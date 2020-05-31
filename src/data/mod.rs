@@ -63,7 +63,19 @@ fn create_config(seq: &SeqDir)
 
 fn create_cluster_yaml(seq: &SeqDir)
 {
-    unimplemented!();
+    let p = seq.path.join(Path::new("cluster.yaml"));
+    let mut file = match File::create(&p) {
+        // The `description` method of `io::Error` returns a string that
+        Err(why) => panic!("couldn't open {}: {}", p.display(), why.to_string()),
+        Ok(file) => file,
+    };
+    let text = b"__default__:
+  params: '-p all --export=ALL -t 1-00:00:00 --mem 6G'
+";
+    match file.write_all(text) {
+        Err(why) => panic!("couldn't write to {}: {}", p.display(), why.to_string()),
+        Ok(_) => return,
+    }
 }
 
 fn create_snakefile(seq: &SeqDir) {
