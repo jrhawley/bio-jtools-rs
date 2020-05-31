@@ -141,14 +141,14 @@ fn main() {
         let mut verbose = o.is_present("verbose");
         // if dryrun is flagged, set verbose automatically
         verbose = verbose || dryrun;
-        // if !indir.exists() {
-        //     println!("{} does not exist. Exiting.", indir.display());
-        // }
-        // if !indir.is_dir() {
-        //     println!("{} is not a directory. Exiting.", indir.display());
-        // } else {
-        data::organize(indir, &seqtype, dryrun, verbose);
-    // }
+        if !indir.exists() {
+            println!("{} does not exist. Exiting.", indir.display());
+        }
+        if !indir.is_dir() {
+            println!("{} is not a directory. Exiting.", indir.display());
+        } else {
+            data::organize(indir, &seqtype, dryrun, verbose);
+        }
     } else if let Some(o) = _matches.subcommand_matches("kspec") {
         unimplemented!();
     } else if let Some(o) = _matches.subcommand_matches("filter") {
