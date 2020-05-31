@@ -184,8 +184,12 @@ rule sort_bam:
 }
 
 fn update_sample(s: &mut SeqSample, mate: String, lane: u8) {
-    s.mates.push(mate);
-    s.lanes.push(lane);
+    if !s.mates.contains(&mate) {
+        s.mates.push(mate);
+    }
+    if !s.lanes.contains(&lane) {
+        s.lanes.push(lane);
+    }
 }
 
 fn create_config(seq: &SeqDir) {
@@ -200,7 +204,7 @@ fn create_config(seq: &SeqDir) {
     // 3. lane index
     // 4. mate/index
     let fq_regex = Regex::new(
-        r"^([A-Za-z0-9-_]+)(?:_S([1-9][0-9]?))?(?:_L00(\d))?(?:_(I[1-3]|R[1-3]))?(?:_001)?\.f(?:ast)?q(?:\.gz)?$",
+        r"^([A-Za-z0-9-]+)(?:_S([1-9][0-9]?))?(?:_L00(\d))?(?:_(I[1-3]|R[1-3]))?(?:_001)?\.f(?:ast)?q(?:\.gz)?$",
     )
     .unwrap();
     let mut samples = HashMap::<String, SeqSample>::new();
@@ -225,24 +229,24 @@ fn create_config(seq: &SeqDir) {
                         Some(l) => l.as_str().parse::<u8>().unwrap(),
                         None => 0,
                     };
-                    let mate = match c.get(3) {
+                    let mate = match c.get(4) {
                         Some(m) => m.as_str().to_string(),
                         None => "".to_string(),
                     };
                     //check for existing samples of the same name, and add new information
-                    let owned_s = sample.to_string();
                     if samples.contains_key(&sample) {
                         samples
-                            .entry(owned_s)
+                            .entry(sample)
                             .and_modify(|e| update_sample(e, mate, lane));
                     } else {
                         let new_sample = SeqSample {
-                            sample: sample,
+                            // create a separate copy of this string
+                            sample: sample.to_string(),
                             index: index,
-                            mates: vec![mate.to_string()],
+                            mates: vec![mate],
                             lanes: vec![lane],
                         };
-                        samples.insert(owned_s, new_sample);
+                        samples.insert(sample, new_sample);
                     }
                 }
                 None => continue,
@@ -250,10 +254,6 @@ fn create_config(seq: &SeqDir) {
         }
     }
     println!("{:?}", samples);
-}
-
-fn correct_sample_name(name: &str) {
-    unimplemented!();
 }
 
 fn mv_to_dir(file: &Path, dir: &Path) {
