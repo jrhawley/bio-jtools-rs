@@ -9,6 +9,12 @@ repository = "https://github.com/jrhawley/bio-jtools-rs/"
 homepage = "https://github.com/jrhawley/bio-jtools-rs/"
 readme = "README.md"
 categories = ["command-line-utilities", "science"]
+keywords = ["bioinformatics", "cli", "fastq"]
+include = [
+	"src/**/*",
+	"Cargo.toml",
+	"README.md"
+]
 
 [dependencies]
 bio = "0.30.0"
