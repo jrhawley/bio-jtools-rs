@@ -66,9 +66,107 @@ fn create_cluster_yaml(seq: &SeqDir)
     unimplemented!();
 }
 
-fn create_snakefile(seq: &SeqDir)
-{
-    unimplemented!();
+fn create_snakefile(seq: &SeqDir) {
+    let p = seq.path.join(Path::new("Snakefile"));
+    let mut file = match File::create(&p) {
+        // The `description` method of `io::Error` returns a string that
+        Err(why) => panic!("couldn't open {}: {}", p.display(), why.to_string()),
+        Ok(file) => file,
+    };
+    let text = 
+        b"# =============================================================================
+# Configuration
+# =============================================================================
+import pandas as pd
+import os.path as path
+
+CONFIG = pd.read_csv('config.tsv', index_col=False, sep='\\t')
+CONFIG = CONFIG.loc[~CONFIG.Sample.str.startswith('#'), :]
+
+REPORT_DIR = 'Reports'
+FASTQ_DIR = 'FASTQs'
+ALIGN_DIR = 'Aligned'
+
+SAMPLES = CONFIG['Sample'].tolist()
+READS = [1, 2]
+LANES = [1, 2, 3, 4]
+
+BWT2_IDX = '/path/to/data/genomes/human/hg38/iGenomes/Sequence/Bowtie2Index/genome'
+CHRS = ['chr' + str(i) for i in list(range(1, 23)) + ['X', 'Y']]
+
+wildcard_constraints:
+    sample = '[A-Za-z0-9-]+',
+    lane = '[1-4]',
+    read = '[1-2]'
+
+# =============================================================================
+# Meta Rules
+# =============================================================================
+rule all:
+    input:
+        path.join(REPORT_DIR, 'multiqc_report.html'),
+        expand(
+            path.join(REPORT_DIR, '{{sample}}_L00{{lane}}_R{{read}}_fastqc.zip'),
+            sample=SAMPLES,
+            lane=LANES,
+            read=READS
+        ),
+
+rule rulegraph:
+    output:
+        'rulegraph.png',
+    shell:
+        'snakemake --rulegraph | dot -Tpng > {{output}}'
+
+# =============================================================================
+# Rules
+# =============================================================================
+# Summaries
+# -----------------------------------------------------------------------------
+rule fastqc:
+    input:
+        path.join(FASTQ_DIR, '{{file}}.fastq.gz')
+    output:
+        path.join(REPORT_DIR, '{{file}}_fastqc.html'),
+        path.join(REPORT_DIR, '{{file}}_fastqc.zip')
+    params:
+        '-o {{}}'.format(REPORT_DIR)
+    shell:
+        'fastqc {{params}} {{input}}'
+rule multiqc:
+    input:
+        samples = expand(
+            path.join(REPORT_DIR, '{{sample}}_fastqc.zip'),
+            sample=SAMPLES
+        )
+    output:
+        path.join(REPORT_DIR, 'multiqc_report.html')
+    shell:
+        'multiqc -f -o {{REPORT_DIR}} {{REPORT_DIR}}'
+
+# Miscellaneous
+# -----------------------------------------------------------------------------
+rule sort_bam_name:
+    input:
+        '{{file}}.bam'
+    output:
+        '{{file}}.name-sorted.bam',
+    shell:
+        'sambamba sort -t 8 --tmpdir . -n -p -o {{output}} {{input}}'
+
+rule sort_bam:
+    input:
+        '{{file}}.bam'
+    output:
+        bam = '{{file}}.sorted.bam',
+        idx = '{{file}}.sorted.bam.bai'
+    shell:
+        'sambamba sort -t 8 --tmpdir . -p {{input}}'
+";
+    match file.write_all(text) {
+        Err(why) => panic!("couldn't write to {}: {}", p.display(), why.to_string()),
+        Ok(_) => return,
+    }
 }
 
 fn correct_sample_name(name: &str)
@@ -83,7 +181,7 @@ fn mv_to_dir(file: &Path, dir: &Path) {
 
 pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
     let reserved_dirnames = vec!["Reports", "FASTQs", "Trimmed", "Aligned"];
-    let reserved_filenames = vec!["README.md", "cluster.yaml", "Snakefile", "config.tsv"];
+    let reserved_filenames = vec!["README.md", "Snakefile", "cluster.yaml", "config.tsv"];
     let fq_regex = Regex::new(r"^([A-Za-z0-9-_]+)_S([1-9][0-9]?)_L00(\d)_(I[1-3]|R[1-3])_001\.f(ast)?q(\.gz)?$").unwrap();
     let dir_regex = Regex::new(r"^([0-9]{2})(0?[1-9]|1[012])(0[1-9]|[12]\d|3[01])_(\w{3,})_(\d{4})_(A|B)(\w{9})(.*)?").unwrap();
     let dir_stem = indir.file_stem().unwrap();
