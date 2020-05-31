@@ -75,15 +75,17 @@ fn main() {
                         .required(true),
                 )
                 .arg(
-                    Arg::with_name("outdir")
-                        .help("New path for input directory")
-                        .required(false),
-                )
-                .arg(
                     Arg::with_name("type")
                         .help("New path for input directory")
                         .possible_values(&["mix", "atac", "chip", "bs", "dna", "rna", "hic"])
                         .default_value("mix"),
+                )
+                .arg(
+                    Arg::with_name("dryrun")
+                        .short("n")
+                        .long("dryrun")
+                        .takes_value(false)
+                        .help("Only show what steps are going to be performed"),
                 ),
         )
         .subcommand(
@@ -126,7 +128,17 @@ fn main() {
         }
     } else if let Some(o) = _matches.subcommand_matches("org") {
         let dir = value_t!(o.value_of("dir"), String).unwrap_or_else(|e| e.exit());
-        data::organize(dir);
+        let seqtype = value_t!(o.value_of("type"), String).unwrap_or_else(|e| e.exit());
+        let indir = Path::new(&dir);
+        let dryrun = o.is_present("dryrun");
+        // if !indir.exists() {
+        //     println!("{} does not exist. Exiting.", indir.display());
+        // }
+        // if !indir.is_dir() {
+        //     println!("{} is not a directory. Exiting.", indir.display());
+        // } else {
+            data::organize(indir, &seqtype, dryrun);
+        // }
     } else if let Some(o) = _matches.subcommand_matches("kspec") {
         unimplemented!();
     } else if let Some(o) = _matches.subcommand_matches("filter") {
