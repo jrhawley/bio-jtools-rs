@@ -1,8 +1,10 @@
 use regex::Regex;
-use std::fs::{create_dir, rename};
+use std::fs::{create_dir, rename, File};
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 use crate::utils::detect_filetype;
+use std::error::Error;
+use std::io::prelude::*;
 
 type Date = chrono::NaiveDate;
 
@@ -33,9 +35,25 @@ fn create_reserved_dir(p: PathBuf) {
     // OpenOptions::new().write(true).create_new(true).open(outfile).expect("Error creating file.");
 }
 
-fn create_readme(seq: &SeqDir)
-{
-    unimplemented!();
+fn create_readme(seq: &SeqDir) {
+    let p = seq.path.join(Path::new("README.md"));
+    let mut file = match File::create(&p) {
+        // The `description` method of `io::Error` returns a string that
+        Err(why) => panic!("couldn't open {}: {}", p.display(), why.to_string()),
+        Ok(file) => file,
+    };
+    let text = format!(
+        "# {}\n\nFlowcell: {}\nDate Submitted: {}\nDate Received: {}\n\n## Description\n\n{}",
+        seq.path.file_stem().unwrap().to_str().unwrap(),
+        seq.flowcell,
+        "",
+        seq.date.format("%Y-%m-%d"),
+        seq.description
+    );
+    match file.write_all(text.as_bytes()) {
+        Err(why) => panic!("couldn't write to {}: {}", p.display(), why.to_string()),
+        Ok(_) => return,
+    }
 }
 
 fn create_config(seq: &SeqDir)
@@ -92,7 +110,7 @@ pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
             if !dryrun {
                 create_reserved_file(&sd, f);
             } else {
-                println!("{}", f);
+                println!("  {}", f);
             }
         }
     }
@@ -104,7 +122,7 @@ pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
             if !dryrun {
                 create_reserved_dir(p);
             } else {
-                println!("{}", d);
+                println!("  {}", d);
             }
         }
     }
@@ -135,7 +153,7 @@ pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
         if !dryrun {
             mv_to_dir(entry_path, destdir.as_path());
         }
-        println!("{} -> {}", entry_path.display(), destdir.as_path().join(entry_path.file_name().unwrap()).display());
+        println!("  {} -> {}", entry_path.display(), destdir.as_path().join(entry_path.file_name().unwrap()).display());
     }
     // extract sample information from FASTQs
 
