@@ -1,5 +1,5 @@
 use regex::Regex;
-use std::fs::OpenOptions;
+use std::fs::{OpenOptions, create_dir};
 use std::path::Path;
 
 type Date = chrono::NaiveDate;
@@ -40,8 +40,8 @@ fn correct_sample_name(name: &str)
 }
 
 
-pub fn organize(indir: &Path, seqtype: &str) {
-    let reserved_dirnames = vec!["Reports", "FASTQs", "Trimmed", "Aligned", "Peaks", "Contacts"];
+pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
+    let reserved_dirnames = vec!["Reports", "FASTQs", "Trimmed", "Aligned"];
     let reserved_filenames = vec!["README.md", "cluster.yaml", "Snakefile", "setup.log", "config.tsv"];
     let fq_regex = Regex::new(r"^([A-Za-z0-9-_]+)_S([1-9][0-9]?)_L00(\d)_(I[1-3]|R[1-3])_001\.f(ast)?q(\.gz)?$").unwrap();
     let dir_regex = Regex::new(r"^([0-9]{2})(0?[1-9]|1[012])(0[1-9]|[12]\d|3[01])_(\w{3,})_(\d{4})_(A|B)(\w{9})(.*)?").unwrap();
@@ -61,14 +61,31 @@ pub fn organize(indir: &Path, seqtype: &str) {
         description: cap.get(8).unwrap().as_str(),
     };
     // create non-existant reserved files
-    for f in reserved_filenames {
+    println!("Creating files...");
+    for f in &reserved_filenames {
         let p = indir.join(Path::new(&f));
-        if !p.exists() {
-            OpenOptions::new().write(true).create_new(true).open(p).expect("Error creating file.");
+        if !p.as_path().exists() {
+            if !dryrun {
+                OpenOptions::new().write(true).create_new(true).open(p).expect("Error creating file.");
+            } else {
+                println!("{}", p.as_path().display());
+            }
         }
     }
     // create non-existant reserved directories
+    println!("Creating directories...");
+    for d in &reserved_dirnames {
+        let p = indir.join(Path::new(&d));
+        if !p.as_path().exists() {
+            if !dryrun {
+                create_dir(p).expect("Error creating directory.");
+            } else {
+                println!("{}", p.as_path().display());
+            }
+        }
+    }
     // find and relocate FASTQs, if necessary
+    println!("Moving sequencing files...");
     // extract sample information from FASTQs
 
 }
