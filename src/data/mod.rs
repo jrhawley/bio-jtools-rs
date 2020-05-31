@@ -1,10 +1,11 @@
+use crate::utils::detect_filetype;
 use regex::Regex;
+use std::collections::HashMap;
+use std::error::Error;
 use std::fs::{create_dir, rename, File};
+use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
-use crate::utils::detect_filetype;
-use std::error::Error;
-use std::io::prelude::*;
 
 type Date = chrono::NaiveDate;
 
@@ -19,13 +20,21 @@ struct SeqDir<'a> {
     description: &'a str,
 }
 
+#[derive(Debug)]
+struct SeqSample {
+    sample: String,
+    index: u8,
+    mates: Vec<String>,
+    lanes: Vec<u8>,
+}
+
 fn create_reserved_file(seq: &SeqDir, file: &str) {
     match file {
         "README.md" => create_readme(seq),
         "cluster.yaml" => create_cluster_yaml(seq),
         "Snakefile" => create_snakefile(seq),
         // exclude config.tsv, make that file separately when you reorganize the FASTQs
-        _ => return
+        _ => return,
     }
     // OpenOptions::new().write(true).create_new(true).open(outfile).expect("Error creating file.");
 }
@@ -56,8 +65,7 @@ fn create_readme(seq: &SeqDir) {
     }
 }
 
-fn create_cluster_yaml(seq: &SeqDir)
-{
+fn create_cluster_yaml(seq: &SeqDir) {
     let p = seq.path.join(Path::new("cluster.yaml"));
     let mut file = match File::create(&p) {
         // The `description` method of `io::Error` returns a string that
@@ -80,8 +88,7 @@ fn create_snakefile(seq: &SeqDir) {
         Err(why) => panic!("couldn't open {}: {}", p.display(), why.to_string()),
         Ok(file) => file,
     };
-    let text = 
-        b"# =============================================================================
+    let text = b"# =============================================================================
 # Configuration
 # =============================================================================
 import pandas as pd
@@ -176,20 +183,76 @@ rule sort_bam:
     }
 }
 
-fn create_config(seq: &SeqDir)
-{
-    let fq_regex = Regex::new(r"^([A-Za-z0-9-_]+)_S([1-9][0-9]?)_L00(\d)_(I[1-3]|R[1-3])_001\.f(ast)?q(\.gz)?$").unwrap();
-    for entry in WalkDir::new(seq.path.join(Path::new("FASTQs"))).into_iter().filter_map(|e| e.ok()) {
-        let entry_path = entry.path();
-        // don't move directories
-        if entry_path.is_file() && detect_filetype(entry_path) == "FASTQ" {
-            println!("{} is a FASTQ!", entry_path.display());
-        }
-    }
+fn update_sample(s: &mut SeqSample, mate: String, lane: u8) {
+    s.mates.push(mate);
+    s.lanes.push(lane);
 }
 
-fn correct_sample_name(name: &str)
-{
+fn create_config(seq: &SeqDir) {
+    // return if the config already exists
+    if seq.path.join(Path::new("config.tsv")).exists() {
+        return;
+    }
+    // sample name + optional sample index + optional lane + optional read mate/index number + optional _001 suffix
+    // this produces the following captures:
+    // 1. name
+    // 2. sample index
+    // 3. lane index
+    // 4. mate/index
+    let fq_regex = Regex::new(
+        r"^([A-Za-z0-9-_]+)(?:_S([1-9][0-9]?))?(?:_L00(\d))?(?:_(I[1-3]|R[1-3]))?(?:_001)?\.f(?:ast)?q(?:\.gz)?$",
+    )
+    .unwrap();
+    let mut samples = HashMap::<String, SeqSample>::new();
+    for entry in WalkDir::new(seq.path.join(Path::new("FASTQs")))
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
+        let entry_path = entry.path();
+        // don't move directories, only assess FASTQs
+        if entry_path.is_file() && detect_filetype(entry_path) == "FASTQ" {
+            let fname = entry_path.file_name().unwrap().to_str().unwrap();
+            let cap = fq_regex.captures(fname);
+            // deal with the capture
+            match cap {
+                Some(c) => {
+                    let sample = c.get(1).unwrap().as_str().to_owned();
+                    let index = match c.get(2) {
+                        Some(i) => i.as_str().parse::<u8>().unwrap(),
+                        None => 0,
+                    };
+                    let lane = match c.get(3) {
+                        Some(l) => l.as_str().parse::<u8>().unwrap(),
+                        None => 0,
+                    };
+                    let mate = match c.get(3) {
+                        Some(m) => m.as_str().to_string(),
+                        None => "".to_string(),
+                    };
+                    //check for existing samples of the same name, and add new information
+                    let owned_s = sample.to_string();
+                    if samples.contains_key(&sample) {
+                        samples
+                            .entry(owned_s)
+                            .and_modify(|e| update_sample(e, mate, lane));
+                    } else {
+                        let new_sample = SeqSample {
+                            sample: sample,
+                            index: index,
+                            mates: vec![mate.to_string()],
+                            lanes: vec![lane],
+                        };
+                        samples.insert(owned_s, new_sample);
+                    }
+                }
+                None => continue,
+            }
+        }
+    }
+    println!("{:?}", samples);
+}
+
+fn correct_sample_name(name: &str) {
     unimplemented!();
 }
 
@@ -197,19 +260,27 @@ fn mv_to_dir(file: &Path, dir: &Path) {
     rename(file, dir.join(file.file_name().unwrap())).expect("Failed to move file.");
 }
 
-
 pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
     let reserved_dirnames = vec!["Reports", "FASTQs", "Trimmed", "Aligned"];
     let reserved_filenames = vec!["README.md", "Snakefile", "cluster.yaml", "config.tsv"];
-    let dir_regex = Regex::new(r"^([0-9]{2})(0?[1-9]|1[012])(0[1-9]|[12]\d|3[01])_(\w{3,})_(\d{4})_(A|B)(\w{9})(.*)?").unwrap();
+    let dir_regex = Regex::new(
+        r"^([0-9]{2})(0?[1-9]|1[012])(0[1-9]|[12]\d|3[01])_(\w{3,})_(\d{4})_(A|B)(\w{9})(.*)?",
+    )
+    .unwrap();
     let dir_stem = indir.file_stem().unwrap();
     // extract flowcell information from directory name
     let cap = dir_regex.captures(dir_stem.to_str().unwrap()).unwrap();
     let date = Date::parse_from_str(
-        &format!("{}{}{}", cap.get(1).unwrap().as_str(), cap.get(2).unwrap().as_str(), cap.get(3).unwrap().as_str()),
-        "%y%m%d"
-    ).unwrap();
-    let sd = SeqDir{
+        &format!(
+            "{}{}{}",
+            cap.get(1).unwrap().as_str(),
+            cap.get(2).unwrap().as_str(),
+            cap.get(3).unwrap().as_str()
+        ),
+        "%y%m%d",
+    )
+    .unwrap();
+    let sd = SeqDir {
         path: indir,
         date: date,
         instrument: cap.get(4).unwrap().as_str(),
@@ -250,7 +321,10 @@ pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
         if entry_path.is_dir() {
             continue;
         // don't move reserved file names
-        } else if reserved_filenames.iter().any(|&i| i == entry_path.file_name().unwrap().to_str().unwrap()) {
+        } else if reserved_filenames
+            .iter()
+            .any(|&i| i == entry_path.file_name().unwrap().to_str().unwrap())
+        {
             continue;
         }
         let destdir: PathBuf;
@@ -258,7 +332,7 @@ pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
         match detect_filetype(entry_path) {
             "FASTA" | "FASTQ" => {
                 destdir = indir.join(Path::new("FASTQs"));
-            },
+            }
             "SAM" | "CRAM" => {
                 destdir = indir.join(Path::new("Aligned"));
             }
@@ -269,7 +343,14 @@ pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
         if !dryrun {
             mv_to_dir(entry_path, destdir.as_path());
         }
-        println!("  {} -> {}", entry_path.display(), destdir.as_path().join(entry_path.file_name().unwrap()).display());
+        println!(
+            "  {} -> {}",
+            entry_path.display(),
+            destdir
+                .as_path()
+                .join(entry_path.file_name().unwrap())
+                .display()
+        );
     }
     // extract sample information from FASTQs, reorganize
     println!("Extracting sample information");
