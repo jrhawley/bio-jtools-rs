@@ -2,6 +2,7 @@ use crate::utils::detect_filetype;
 use regex::Regex;
 use std::collections::HashMap;
 use std::error::Error;
+use std::fmt;
 use std::fs::{create_dir, rename, File};
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
@@ -25,7 +26,19 @@ struct SeqSample {
     sample: String,
     index: u8,
     mates: Vec<String>,
-    lanes: Vec<u8>,
+    lanes: Vec<String>,
+}
+impl fmt::Display for SeqSample {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}\t{}\t{}\t{}\t",
+            self.sample,
+            self.index,
+            self.mates.join(","),
+            self.lanes.join(","),
+        )
+    }
 }
 
 fn create_reserved_file(seq: &SeqDir, file: &str) {
@@ -183,7 +196,7 @@ rule sort_bam:
     }
 }
 
-fn update_sample(s: &mut SeqSample, mate: String, lane: u8) {
+fn update_sample(s: &mut SeqSample, mate: String, lane: String) {
     if !s.mates.contains(&mate) {
         s.mates.push(mate);
     }
@@ -226,8 +239,8 @@ fn create_config(seq: &SeqDir) {
                         None => 0,
                     };
                     let lane = match c.get(3) {
-                        Some(l) => l.as_str().parse::<u8>().unwrap(),
-                        None => 0,
+                        Some(l) => l.as_str().to_string(),
+                        None => "".to_string(),
                     };
                     let mate = match c.get(4) {
                         Some(m) => m.as_str().to_string(),
@@ -253,7 +266,22 @@ fn create_config(seq: &SeqDir) {
             }
         }
     }
-    println!("{:?}", samples);
+    // write sample information to config.tsv
+    let p = seq.path.join(Path::new("config.tsv"));
+    let mut file = match File::create(&p) {
+        // The `description` method of `io::Error` returns a string that
+        Err(why) => panic!("couldn't open {}: {}", p.display(), why.to_string()),
+        Ok(file) => file,
+    };
+    let mut text = "Sample_ID\tSample_Index\tMates\tLanes\tDescription\n".to_string();
+    // append new row for each sample
+    for (_, s) in &samples {
+        text.push_str(&format!("{}", s));
+    }
+    match file.write_all(text.as_bytes()) {
+        Err(why) => panic!("couldn't write to {}: {}", p.display(), why.to_string()),
+        Ok(_) => return,
+    }
 }
 
 fn mv_to_dir(file: &Path, dir: &Path) {
