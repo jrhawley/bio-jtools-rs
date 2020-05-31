@@ -24,7 +24,7 @@ fn create_reserved_file(seq: &SeqDir, file: &str) {
         "README.md" => create_readme(seq),
         "cluster.yaml" => create_cluster_yaml(seq),
         "Snakefile" => create_snakefile(seq),
-        "config.tsv" => create_config(seq),
+        // exclude config.tsv, make that file separately when you reorganize the FASTQs
         _ => return
     }
     // OpenOptions::new().write(true).create_new(true).open(outfile).expect("Error creating file.");
@@ -54,11 +54,6 @@ fn create_readme(seq: &SeqDir) {
         Err(why) => panic!("couldn't write to {}: {}", p.display(), why.to_string()),
         Ok(_) => return,
     }
-}
-
-fn create_config(seq: &SeqDir)
-{
-    unimplemented!();
 }
 
 fn create_cluster_yaml(seq: &SeqDir)
@@ -181,6 +176,18 @@ rule sort_bam:
     }
 }
 
+fn create_config(seq: &SeqDir)
+{
+    let fq_regex = Regex::new(r"^([A-Za-z0-9-_]+)_S([1-9][0-9]?)_L00(\d)_(I[1-3]|R[1-3])_001\.f(ast)?q(\.gz)?$").unwrap();
+    for entry in WalkDir::new(seq.path.join(Path::new("FASTQs"))).into_iter().filter_map(|e| e.ok()) {
+        let entry_path = entry.path();
+        // don't move directories
+        if entry_path.is_file() && detect_filetype(entry_path) == "FASTQ" {
+            println!("{} is a FASTQ!", entry_path.display());
+        }
+    }
+}
+
 fn correct_sample_name(name: &str)
 {
     unimplemented!();
@@ -194,7 +201,6 @@ fn mv_to_dir(file: &Path, dir: &Path) {
 pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
     let reserved_dirnames = vec!["Reports", "FASTQs", "Trimmed", "Aligned"];
     let reserved_filenames = vec!["README.md", "Snakefile", "cluster.yaml", "config.tsv"];
-    let fq_regex = Regex::new(r"^([A-Za-z0-9-_]+)_S([1-9][0-9]?)_L00(\d)_(I[1-3]|R[1-3])_001\.f(ast)?q(\.gz)?$").unwrap();
     let dir_regex = Regex::new(r"^([0-9]{2})(0?[1-9]|1[012])(0[1-9]|[12]\d|3[01])_(\w{3,})_(\d{4})_(A|B)(\w{9})(.*)?").unwrap();
     let dir_stem = indir.file_stem().unwrap();
     // extract flowcell information from directory name
@@ -265,6 +271,7 @@ pub fn organize(indir: &Path, seqtype: &str, dryrun: bool) {
         }
         println!("  {} -> {}", entry_path.display(), destdir.as_path().join(entry_path.file_name().unwrap()).display());
     }
-    // extract sample information from FASTQs
-
+    // extract sample information from FASTQs, reorganize
+    println!("Extracting sample information");
+    create_config(&sd);
 }
