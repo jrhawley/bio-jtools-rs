@@ -30,7 +30,7 @@ pub fn jaccard(a: &Path, b: &Path) -> (u32, u32, f64) {
     return (intersect, union, j);
 }
 
-pub fn multijaccard(paths: &Vec<&Path>) {
+pub fn multijaccard(paths: &Vec<&Path>) -> Table {
     // matrix to store pairwise results
     let mut m = Table::new();
     // add extra column and row for paths
@@ -50,5 +50,5 @@ pub fn multijaccard(paths: &Vec<&Path>) {
         let entire_row: Vec<&str> = padding.into_iter().chain(remainder_str).collect();
         m.add_row(Row::new(entire_row.iter().map(|r| Cell::new(r)).collect()));
     }
-    m.printstd();
+    return m;
 }

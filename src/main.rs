@@ -4,6 +4,7 @@ mod fastx;
 mod interval;
 mod utils;
 use std::path::Path;
+use std::fs::File;
 
 fn main() {
     let _matches = App::new(env!("CARGO_PKG_NAME"))
@@ -27,12 +28,11 @@ fn main() {
                         .default_value(""),
                 )
                 .arg(
-                    Arg::with_name("prefix")
-                        .help("Output file prefix. `<prefix>.tsv` and `<prefix>.png` are created")
+                    Arg::with_name("output")
+                        .help("Output file")
                         .short("o")
-                        .long("prefix")
+                        .long("output")
                         .required(false)
-                        .default_value("output"),
                 ),
         )
         .subcommand(
@@ -137,7 +137,21 @@ fn main() {
                 let (i, u, j) = interval::jaccard(&bed_paths[0], &bed_paths[1]);
                 println!("{}, {}, {}", i, u, j);
             },
-            _ => unimplemented!()
+            _ => {
+                let m = interval::multijaccard(&bed_paths);
+                // write to output or print to STDOUT
+                if o.is_present("output") {
+                    // get output file as string
+                    let outfile = value_t!(o.value_of("output"), String).unwrap_or_else(|e| e.exit());
+                    // create file handle for output
+                    let out = File::create(outfile).unwrap();
+                    // save to CSV file
+                    m.to_csv(out).expect("Unable to save to output.");
+                } else {
+                    // print to STDOUT
+                    m.printstd();
+                }
+            }
         }
     } else if let Some(o) = _matches.subcommand_matches("org") {
         let dir = value_t!(o.value_of("dir"), String).unwrap_or_else(|e| e.exit());
