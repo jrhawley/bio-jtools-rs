@@ -3,6 +3,7 @@ use std::path::Path;
 // use std::cmp;
 use std::fs::File;
 use std::io::{self, BufRead};
+use prettytable::{Table, Row, Cell, row, cell};
 
 type Iv = Interval<u32>;
 
@@ -29,11 +30,25 @@ pub fn jaccard(a: &Path, b: &Path) -> (u32, u32, f64) {
     return (intersect, union, j);
 }
 
-// fn jaccard(a: IntervalTree, b: IntervalTree) -> f32
-// {
-//     return 0.0f32;
-// }
+pub fn multijaccard(paths: &Vec<&Path>) {
+    // matrix to store pairwise results
+    let mut m = Table::new();
+    // add extra column and row for paths
+    // create header
+    let header = vec![""].iter().cloned().chain(
+        paths.iter().map(|p| p.to_str().unwrap()))
+        .collect::<Vec<_>>();
 
-// pub fn multijaccard()
-// {
-// }
+    m.set_titles(Row::new(header.iter().map(|p| Cell::new(p)).collect::<Vec<_>>()));
+    
+    for (i, p) in paths.iter().enumerate() {
+        let diag = vec!["1"];
+        let mut padding: Vec<&str> = vec![p.to_str().unwrap()].iter().cloned().chain(vec![""; i]).collect::<Vec<_>>();
+        padding = padding.iter().cloned().chain(diag).collect::<Vec<_>>();
+        let remainder: Vec<String> = paths[(i+1)..paths.len()].iter().map(|q| jaccard(p, q).2.to_string()).collect();
+        let remainder_str: Vec<&str> = remainder.iter().map(|q| q.as_str()).collect();
+        let entire_row: Vec<&str> = padding.into_iter().chain(remainder_str).collect();
+        m.add_row(Row::new(entire_row.iter().map(|r| Cell::new(r)).collect()));
+    }
+    m.printstd();
+}
