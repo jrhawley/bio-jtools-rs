@@ -15,7 +15,7 @@ fn line_to_intvl(line: Result<String, io::Error>) -> Iv {
     Interval{start: start, stop: end, val: 0}
 }
 
-pub fn jaccard_path(a: &Path, b: &Path) -> (u32, u32, f64) {
+pub fn jaccard(a: &Path, b: &Path) -> (u32, u32, f64) {
     // naive implementation: load both files into memory and intersect them
     let file_a = File::open(a).unwrap();
     let file_b = File::open(b).unwrap();

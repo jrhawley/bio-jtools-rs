@@ -134,7 +134,7 @@ fn main() {
         match bed_paths.len() {
             1 => println!("Only 1 interval file, which is obviously self-similar."),
             2 => {
-                let (i, u, j) = interval::jaccard_path(&bed_paths[0], &bed_paths[1]);
+                let (i, u, j) = interval::jaccard(&bed_paths[0], &bed_paths[1]);
                 println!("{}, {}, {}", i, u, j);
             },
             _ => unimplemented!()
