@@ -1,19 +1,14 @@
-use clap::{crate_version, value_t, values_t, App, Arg, SubCommand};
+use clap::{value_t, values_t, App, Arg, SubCommand};
+mod data;
 mod fastx;
 mod interval;
 mod utils;
 use std::path::Path;
 
-macro_rules! crate_description {
-    () => {
-        env!("CARGO_PKG_DESCRIPTION")
-    };
-}
-
 fn main() {
-    let _matches = App::new("bio-jtools")
-        .version(crate_version!())
-        .about(crate_description!())
+    let _matches = App::new(env!("CARGO_PKG_NAME"))
+        .version(env!("CARGO_PKG_VERSION"))
+        .about(env!("CARGO_PKG_DESCRIPTION"))
         .subcommand(
             SubCommand::with_name("jaccard")
                 .about("Calculate the Jaccard index for each pair in a set of BED files")
@@ -80,15 +75,24 @@ fn main() {
                         .required(true),
                 )
                 .arg(
-                    Arg::with_name("outdir")
-                        .help("New path for input directory")
-                        .required(false),
-                )
-                .arg(
                     Arg::with_name("type")
                         .help("New path for input directory")
                         .possible_values(&["mix", "atac", "chip", "bs", "dna", "rna", "hic"])
                         .default_value("mix"),
+                )
+                .arg(
+                    Arg::with_name("dryrun")
+                        .short("n")
+                        .long("dryrun")
+                        .takes_value(false)
+                        .help("Only show what steps are going to be performed"),
+                )
+                .arg(
+                    Arg::with_name("verbose")
+                        .short("v")
+                        .long("verbose")
+                        .takes_value(false)
+                        .help("Show verbose output"),
                 ),
         )
         .subcommand(
@@ -136,7 +140,21 @@ fn main() {
             _ => unimplemented!()
         }
     } else if let Some(o) = _matches.subcommand_matches("org") {
-        unimplemented!();
+        let dir = value_t!(o.value_of("dir"), String).unwrap_or_else(|e| e.exit());
+        let seqtype = value_t!(o.value_of("type"), String).unwrap_or_else(|e| e.exit());
+        let indir = Path::new(&dir);
+        let dryrun = o.is_present("dryrun");
+        let mut verbose = o.is_present("verbose");
+        // if dryrun is flagged, set verbose automatically
+        verbose = verbose || dryrun;
+        if !indir.exists() {
+            println!("{} does not exist. Exiting.", indir.display());
+        }
+        if !indir.is_dir() {
+            println!("{} is not a directory. Exiting.", indir.display());
+        } else {
+            data::organize(indir, &seqtype, dryrun, verbose);
+        }
     } else if let Some(o) = _matches.subcommand_matches("kspec") {
         unimplemented!();
     } else if let Some(o) = _matches.subcommand_matches("filter") {
