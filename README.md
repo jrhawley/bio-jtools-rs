@@ -33,17 +33,17 @@ This takes a folder directly from an Illumina sequencer with FASTQ files and org
 
 ```shell
 YYMMDD_INSTID_RUN_FCID/
-├── FASTQs/
+├── FASTQs/                     # home for your raw data
     ├── Sample1_R1.fastq.gz
     ├── Sample1_R2.fastq.gz
     └── ...
-├── Aligned/
-├── Reports/
-├── config.tsv
-├── cluster.yaml
-├── README.md
-├── setup.log
-└── Snakefile
+├── Aligned/                    # a home for your aligned data
+├── Reports/                    # QC reports, etc files
+├── config.tsv                  # a table of samples (rows) x features (cols)
+├── cluster.yaml                # a yaml file of cluster parameters for jobs in the Snakefile
+├── README.md                   # description of the folder, data contents
+├── setup.log                   # a log of what operations were performed with `bjt org`
+└── Snakefile                   # Snakemake workflow file
 ```
 
 ## Benchmarking
