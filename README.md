@@ -29,10 +29,22 @@ Calculate the k-mer spectra of an HTS file.
 
 Organize a batch of raw sequencing data.
 
-This takes a folder directly from an Illumina sequencer with FASTQ files and organizes them into the following directories:
-* FASTQs
-* Aligned
-* Reports
+This takes a folder directly from an Illumina sequencer with FASTQ files and organizes them as follows, ready for alginment and quality control:
+
+```shell
+YYMMDD_INSTID_RUN_FCID/
+├── FASTQs/
+    ├── Sample1_R1.fastq.gz
+    ├── Sample1_R2.fastq.gz
+    └── ...
+├── Aligned/
+├── Reports/
+├── config.tsv
+├── cluster.yaml
+├── README.md
+├── setup.log
+└── Snakefile
+```
 
 ## Benchmarking
 
