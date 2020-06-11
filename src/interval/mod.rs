@@ -1,31 +1,79 @@
 use rust_lapper::{Interval, Lapper};
 use std::path::Path;
-// use std::cmp;
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufRead};
-use prettytable::{Table, Row, Cell, row, cell};
+use prettytable::{Table, Row, Cell};
+use itertools::Itertools;
 
 type Iv = Interval<u32>;
 
-fn line_to_intvl(line: Result<String, io::Error>) -> Iv {
+fn line_to_intvl(line: Result<String, io::Error>) -> (String, Iv) {
     let l = line.unwrap();
     let mut tabsplit = l.split(|c| c == '\t');
     let chrom = tabsplit.next().unwrap();
     let start: u32 = tabsplit.next().unwrap().parse::<u32>().unwrap();
     let end: u32 = tabsplit.next().unwrap().parse::<u32>().unwrap();
-    Interval{start: start, stop: end, val: 0}
+    return (chrom.to_string(), Interval{start: start, stop: end, val: 0})
+}
+
+fn file_to_chromlap(file: File) -> HashMap<String, Lapper<u32>> {
+    // let mut file_data: HashMap<String, &mut Vec<Iv>> = HashMap::new();
+
+    // // iterate over file lines
+    // for l in io::BufReader::new(file).lines() {
+    //     // create interval from the line
+    //     let (chr, iv) = line_to_intvl(l);
+    //     // store it in the vector
+    //     if file_data.contains_key(&chr) {
+    //         file_data[&chr].push(iv);
+    //     } else {
+    //         let blank = vec![iv];
+    //         file_data.insert(chr, &mut blank).unwrap();
+    //     }
+    // }
+
+    // convert Vec into single Lapper objects
+    let mut lap: HashMap<String, Lapper<u32>> = HashMap::new();
+    // for chrom in file_data.keys() {
+    //     lap.insert(chrom.to_string(), Lapper::new(file_data[chrom].to_vec()));
+    // }
+
+    return lap;
 }
 
 pub fn jaccard(a: &Path, b: &Path) -> (u32, u32, f64) {
     // naive implementation: load both files into memory and intersect them
     let file_a = File::open(a).unwrap();
     let file_b = File::open(b).unwrap();
-    let data_a: Vec<Iv> = io::BufReader::new(file_a).lines().map(|l| line_to_intvl(l)).collect();
-    let data_b: Vec<Iv> = io::BufReader::new(file_b).lines().map(|l| line_to_intvl(l)).collect();
+    
+    // create HashMap of the data, by chromosome
+    let lap_a = file_to_chromlap(file_a);
+    let lap_b = file_to_chromlap(file_b);
 
-    let lap_a = Lapper::new(data_a);
-    let lap_b = Lapper::new(data_b);
-    let (union, intersect) = lap_a.union_and_intersect(&lap_b);
+    // iterate over all chromosomes to calculate intersections/unions per chromosome
+    let mut union: u32 = 0;
+    let mut intersect: u32 = 0;
+    for chrom in lap_a.keys().chain(lap_b.keys()).unique() {
+        let l_a: &Lapper<u32>;
+        let l_b: &Lapper<u32>;
+        let blank = Lapper::new(vec![Interval{start: 0, stop: 0, val: 0}]); // temporary empty lapper
+
+        // chrom will be in one of a or b, check if it's not in one of them
+        if lap_a.contains_key(chrom) {
+            l_a = &blank;
+            l_b = &lap_b[chrom];
+        } else {
+            l_a = &lap_a[chrom];
+            l_b = &blank;
+        }
+
+        // calculate union and intersection for this chromosome
+        let (u, i) = l_a.union_and_intersect(l_b);
+        // add to total counts across all chromosomes
+        union += u;
+        intersect += i;
+    }
     let j = f64::from(intersect) / f64::from(union);
     return (intersect, union, j);
 }
