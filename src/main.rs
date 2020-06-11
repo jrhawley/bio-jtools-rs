@@ -3,8 +3,8 @@ mod data;
 mod fastx;
 mod interval;
 mod utils;
-use std::path::Path;
 use std::fs::File;
+use std::path::Path;
 
 fn main() {
     let _matches = App::new(env!("CARGO_PKG_NAME"))
@@ -19,20 +19,21 @@ fn main() {
                         .multiple(true)
                         .required(true),
                 )
-                .arg(
-                    Arg::with_name("names")
-                        .short("n")
-                        .long("names")
-                        .help("comma-separated labels for the BED files")
-                        .required(false)
-                        .default_value(""),
-                )
+                // .arg(
+                //     Arg::with_name("names")
+                //         .short("n")
+                //         .long("names")
+                //         .help("comma-separated labels for the BED files")
+                //         .required(false)
+                //         .default_value(""),
+                // )
                 .arg(
                     Arg::with_name("output")
-                        .help("Output file")
                         .short("o")
                         .long("output")
+                        .help("Output file")
                         .required(false)
+                        .takes_value(true),
                 ),
         )
         .subcommand(
@@ -136,13 +137,14 @@ fn main() {
             2 => {
                 let (i, u, j) = interval::jaccard(&bed_paths[0], &bed_paths[1]);
                 println!("{}, {}, {}", i, u, j);
-            },
+            }
             _ => {
                 let m = interval::multijaccard(&bed_paths);
                 // write to output or print to STDOUT
                 if o.is_present("output") {
                     // get output file as string
-                    let outfile = value_t!(o.value_of("output"), String).unwrap_or_else(|e| e.exit());
+                    let outfile =
+                        value_t!(o.value_of("output"), String).unwrap_or_else(|e| e.exit());
                     // create file handle for output
                     let out = File::create(outfile).unwrap();
                     // save to CSV file
