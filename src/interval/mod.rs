@@ -14,30 +14,37 @@ fn line_to_intvl(line: Result<String, io::Error>) -> (String, Iv) {
     let chrom = tabsplit.next().unwrap();
     let start: u32 = tabsplit.next().unwrap().parse::<u32>().unwrap();
     let end: u32 = tabsplit.next().unwrap().parse::<u32>().unwrap();
-    return (chrom.to_string(), Interval{start: start, stop: end, val: 0})
+    return (
+        chrom.to_string(),
+        Interval {
+            start: start,
+            stop: end,
+            val: 0,
+        },
+    );
 }
 
 fn file_to_chromlap(file: File) -> HashMap<String, Lapper<u32>> {
-    // let mut file_data: HashMap<String, &mut Vec<Iv>> = HashMap::new();
+    let mut file_data: HashMap<String, Vec<Iv>> = HashMap::new();
 
-    // // iterate over file lines
-    // for l in io::BufReader::new(file).lines() {
-    //     // create interval from the line
-    //     let (chr, iv) = line_to_intvl(l);
-    //     // store it in the vector
-    //     if file_data.contains_key(&chr) {
-    //         file_data[&chr].push(iv);
-    //     } else {
-    //         let blank = vec![iv];
-    //         file_data.insert(chr, &mut blank).unwrap();
-    //     }
-    // }
+    // iterate over file lines
+    for l in io::BufReader::new(file).lines() {
+        // create interval from the line
+        let (chr, iv) = line_to_intvl(l);
+        // store it in the vector
+        if let Some(x) = file_data.get_mut(&chr) {
+            x.push(iv);
+        } else {
+            let blank = vec![iv];
+            file_data.insert(chr, blank);
+        }
+    }
 
     // convert Vec into single Lapper objects
     let mut lap: HashMap<String, Lapper<u32>> = HashMap::new();
-    // for chrom in file_data.keys() {
-    //     lap.insert(chrom.to_string(), Lapper::new(file_data[chrom].to_vec()));
-    // }
+    for chrom in file_data.keys() {
+        lap.insert(chrom.to_string(), Lapper::new(file_data[chrom].to_vec()));
+    }
 
     return lap;
 }
