@@ -1,7 +1,6 @@
 use crate::utils::detect_filetype;
 use regex::Regex;
 use std::collections::HashMap;
-use std::error::Error;
 use std::fmt;
 use std::fs::{create_dir, rename, File};
 use std::io::prelude::*;
