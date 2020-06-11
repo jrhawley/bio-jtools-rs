@@ -1,10 +1,10 @@
+use itertools::Itertools;
+use prettytable::{Cell, Row, Table};
 use rust_lapper::{Interval, Lapper};
-use std::path::Path;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufRead};
-use prettytable::{Table, Row, Cell};
-use itertools::Itertools;
+use std::path::Path;
 
 type Iv = Interval<u32>;
 
@@ -53,7 +53,6 @@ pub fn jaccard(a: &Path, b: &Path) -> (u32, u32, f64) {
     // naive implementation: load both files into memory and intersect them
     let file_a = File::open(a).unwrap();
     let file_b = File::open(b).unwrap();
-    
     // create HashMap of the data, by chromosome
     let lap_a = file_to_chromlap(file_a);
     let lap_b = file_to_chromlap(file_b);
@@ -64,15 +63,22 @@ pub fn jaccard(a: &Path, b: &Path) -> (u32, u32, f64) {
     for chrom in lap_a.keys().chain(lap_b.keys()).unique() {
         let l_a: &Lapper<u32>;
         let l_b: &Lapper<u32>;
-        let blank = Lapper::new(vec![Interval{start: 0, stop: 0, val: 0}]); // temporary empty lapper
+        let blank = Lapper::new(vec![Interval {
+            start: 0,
+            stop: 0,
+            val: 0,
+        }]); // temporary empty lapper
 
         // chrom will be in one of a or b, check if it's not in one of them
-        if lap_a.contains_key(chrom) {
+        if !lap_a.contains_key(chrom) {
             l_a = &blank;
             l_b = &lap_b[chrom];
-        } else {
+        } else if !lap_b.contains_key(chrom) {
             l_a = &lap_a[chrom];
             l_b = &blank;
+        } else {
+            l_a = &lap_a[chrom];
+            l_b = &lap_b[chrom];
         }
 
         // calculate union and intersection for this chromosome
@@ -90,17 +96,27 @@ pub fn multijaccard(paths: &Vec<&Path>) -> Table {
     let mut m = Table::new();
     // add extra column and row for paths
     // create header
-    let header = vec![""].iter().cloned().chain(
-        paths.iter().map(|p| p.to_str().unwrap()))
+    let header = vec![""]
+        .iter()
+        .cloned()
+        .chain(paths.iter().map(|p| p.to_str().unwrap()))
         .collect::<Vec<_>>();
 
-    m.set_titles(Row::new(header.iter().map(|p| Cell::new(p)).collect::<Vec<_>>()));
-    
+    m.set_titles(Row::new(
+        header.iter().map(|p| Cell::new(p)).collect::<Vec<_>>(),
+    ));
     for (i, p) in paths.iter().enumerate() {
         let diag = vec!["1"];
-        let mut padding: Vec<&str> = vec![p.to_str().unwrap()].iter().cloned().chain(vec![""; i]).collect::<Vec<_>>();
+        let mut padding: Vec<&str> = vec![p.to_str().unwrap()]
+            .iter()
+            .cloned()
+            .chain(vec![""; i])
+            .collect::<Vec<_>>();
         padding = padding.iter().cloned().chain(diag).collect::<Vec<_>>();
-        let remainder: Vec<String> = paths[(i+1)..paths.len()].iter().map(|q| jaccard(p, q).2.to_string()).collect();
+        let remainder: Vec<String> = paths[(i + 1)..paths.len()]
+            .iter()
+            .map(|q| jaccard(p, q).2.to_string())
+            .collect();
         let remainder_str: Vec<&str> = remainder.iter().map(|q| q.as_str()).collect();
         let entire_row: Vec<&str> = padding.into_iter().chain(remainder_str).collect();
         m.add_row(Row::new(entire_row.iter().map(|r| Cell::new(r)).collect()));
