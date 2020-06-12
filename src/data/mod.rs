@@ -85,10 +85,12 @@ fn create_cluster_yaml(seq: &SeqDir) {
         Err(why) => panic!("couldn't open {}: {}", p.display(), why.to_string()),
         Ok(file) => file,
     };
-    let text = b"__default__:
-  params: '-p all --export=ALL -t 1-00:00:00 --mem 6G'
-";
-    match file.write_all(text) {
+    let text = indoc!(
+        "__default__:
+            params: '-p all --export=ALL -t 1-00:00:00 --mem 6G'
+        "
+    );
+    match file.write_all(text.as_bytes()) {
         Err(why) => panic!("couldn't write to {}: {}", p.display(), why.to_string()),
         Ok(_) => return,
     }
