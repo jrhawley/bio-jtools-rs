@@ -293,7 +293,7 @@ fn mv_to_dir(file: &Path, dir: &Path) {
     rename(file, dir.join(file.file_name().unwrap())).expect("Failed to move file.");
 }
 
-pub fn organize(indir: &Path, seqtype: &str, dryrun: bool, verbose: bool) {
+pub fn organize(indir: &Path, dryrun: bool, verbose: bool) {
     let reserved_dirnames = vec!["Reports", "FASTQs", "Trimmed", "Aligned"];
     let reserved_filenames = vec!["README.md", "Snakefile", "cluster.yaml", "config.tsv"];
     let dir_regex = Regex::new(
