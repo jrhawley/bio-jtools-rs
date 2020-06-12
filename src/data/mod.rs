@@ -1,4 +1,5 @@
 use crate::utils::detect_filetype;
+use indoc::indoc;
 use regex::Regex;
 use std::collections::HashMap;
 use std::fmt;
@@ -100,96 +101,99 @@ fn create_snakefile(seq: &SeqDir) {
         Err(why) => panic!("couldn't open {}: {}", p.display(), why.to_string()),
         Ok(file) => file,
     };
-    let text = b"# =============================================================================
-# Configuration
-# =============================================================================
-import pandas as pd
-import os.path as path
+    let text = indoc!(
+        "
+        # =============================================================================
+        # Configuration
+        # =============================================================================
+        import pandas as pd
+        import os.path as path
 
-CONFIG = pd.read_csv('config.tsv', index_col=False, sep='\\t')
-CONFIG = CONFIG.loc[~CONFIG.Sample.str.startswith('#'), :]
+        CONFIG = pd.read_csv('config.tsv', index_col=False, sep='\\t')
+        CONFIG = CONFIG.loc[~CONFIG.Sample.str.startswith('#'), :]
 
-REPORT_DIR = 'Reports'
-FASTQ_DIR = 'FASTQs'
-ALIGN_DIR = 'Aligned'
+        REPORT_DIR = 'Reports'
+        FASTQ_DIR = 'FASTQs'
+        ALIGN_DIR = 'Aligned'
 
-SAMPLES = CONFIG['Sample'].tolist()
-READS = [1, 2]
-LANES = [1, 2, 3, 4]
+        SAMPLES = CONFIG['Sample'].tolist()
+        READS = [1, 2]
+        LANES = [1, 2, 3, 4]
 
-BWT2_IDX = '/path/to/data/genomes/human/hg38/iGenomes/Sequence/Bowtie2Index/genome'
-CHRS = ['chr' + str(i) for i in list(range(1, 23)) + ['X', 'Y']]
+        BWT2_IDX = '/path/to/data/genomes/human/hg38/iGenomes/Sequence/Bowtie2Index/genome'
+        CHRS = ['chr' + str(i) for i in list(range(1, 23)) + ['X', 'Y']]
 
-wildcard_constraints:
-    sample = '[A-Za-z0-9-]+',
-    lane = '[1-4]',
-    read = '[1-2]'
+        wildcard_constraints:
+            sample = '[A-Za-z0-9-]+',
+            lane = '[1-4]',
+            read = '[1-2]'
 
-# =============================================================================
-# Meta Rules
-# =============================================================================
-rule all:
-    input:
-        path.join(REPORT_DIR, 'multiqc_report.html'),
-        expand(
-            path.join(REPORT_DIR, '{{sample}}_L00{{lane}}_R{{read}}_fastqc.zip'),
-            sample=SAMPLES,
-            lane=LANES,
-            read=READS
-        ),
+        # =============================================================================
+        # Meta Rules
+        # =============================================================================
+        rule all:
+            input:
+                path.join(REPORT_DIR, 'multiqc_report.html'),
+                expand(
+                    path.join(REPORT_DIR, '{{sample}}_L00{{lane}}_R{{read}}_fastqc.zip'),
+                    sample=SAMPLES,
+                    lane=LANES,
+                    read=READS
+                ),
 
-rule rulegraph:
-    output:
-        'rulegraph.png',
-    shell:
-        'snakemake --rulegraph | dot -Tpng > {{output}}'
+        rule rulegraph:
+            output:
+                'rulegraph.png',
+            shell:
+                'snakemake --rulegraph | dot -Tpng > {{output}}'
 
-# =============================================================================
-# Rules
-# =============================================================================
-# Summaries
-# -----------------------------------------------------------------------------
-rule fastqc:
-    input:
-        path.join(FASTQ_DIR, '{{file}}.fastq.gz')
-    output:
-        path.join(REPORT_DIR, '{{file}}_fastqc.html'),
-        path.join(REPORT_DIR, '{{file}}_fastqc.zip')
-    params:
-        '-o {{}}'.format(REPORT_DIR)
-    shell:
-        'fastqc {{params}} {{input}}'
-rule multiqc:
-    input:
-        samples = expand(
-            path.join(REPORT_DIR, '{{sample}}_fastqc.zip'),
-            sample=SAMPLES
-        )
-    output:
-        path.join(REPORT_DIR, 'multiqc_report.html')
-    shell:
-        'multiqc -f -o {{REPORT_DIR}} {{REPORT_DIR}}'
+        # =============================================================================
+        # Rules
+        # =============================================================================
+        # Summaries
+        # -----------------------------------------------------------------------------
+        rule fastqc:
+            input:
+                path.join(FASTQ_DIR, '{{file}}.fastq.gz')
+            output:
+                path.join(REPORT_DIR, '{{file}}_fastqc.html'),
+                path.join(REPORT_DIR, '{{file}}_fastqc.zip')
+            params:
+                '-o {{}}'.format(REPORT_DIR)
+            shell:
+                'fastqc {{params}} {{input}}'
+        rule multiqc:
+            input:
+                samples = expand(
+                    path.join(REPORT_DIR, '{{sample}}_fastqc.zip'),
+                    sample=SAMPLES
+                )
+            output:
+                path.join(REPORT_DIR, 'multiqc_report.html')
+            shell:
+                'multiqc -f -o {{REPORT_DIR}} {{REPORT_DIR}}'
 
-# Miscellaneous
-# -----------------------------------------------------------------------------
-rule sort_bam_name:
-    input:
-        '{{file}}.bam'
-    output:
-        '{{file}}.name-sorted.bam',
-    shell:
-        'sambamba sort -t 8 --tmpdir . -n -p -o {{output}} {{input}}'
+        # Miscellaneous
+        # -----------------------------------------------------------------------------
+        rule sort_bam_name:
+            input:
+                '{{file}}.bam'
+            output:
+                '{{file}}.name-sorted.bam',
+            shell:
+                'sambamba sort -t 8 --tmpdir . -n -p -o {{output}} {{input}}'
 
-rule sort_bam:
-    input:
-        '{{file}}.bam'
-    output:
-        bam = '{{file}}.sorted.bam',
-        idx = '{{file}}.sorted.bam.bai'
-    shell:
-        'sambamba sort -t 8 --tmpdir . -p {{input}}'
-";
-    match file.write_all(text) {
+        rule sort_bam:
+            input:
+                '{{file}}.bam'
+            output:
+                bam = '{{file}}.sorted.bam',
+                idx = '{{file}}.sorted.bam.bai'
+            shell:
+                'sambamba sort -t 8 --tmpdir . -p {{input}}'
+        "
+    );
+    match file.write_all(text.as_bytes()) {
         Err(why) => panic!("couldn't write to {}: {}", p.display(), why.to_string()),
         Ok(_) => return,
     }
