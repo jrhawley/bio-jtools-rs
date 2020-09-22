@@ -24,14 +24,14 @@ fn main() {
                         .multiple(true)
                         .required(true),
                 )
-                // .arg(
-                //     Arg::with_name("names")
-                //         .short("n")
-                //         .long("names")
-                //         .help("comma-separated labels for the BED files")
-                //         .required(false)
-                //         .default_value(""),
-                // )
+                .arg(
+                    Arg::with_name("names")
+                        .short("n")
+                        .long("names")
+                        .help("comma-separated labels for the BED files")
+                        .required(false)
+                        .default_value(""),
+                )
                 .arg(
                     Arg::with_name("output")
                         .short("o")

@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 use crate::fastx;
+use crate::align;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum Hts {
@@ -76,7 +77,8 @@ impl HtsFile {
     /// Print HTS file information
     pub fn print_info(&self) {
         match self.hts_type {
-            Hts::FASTX(_) => fastx::info(&self.path()),
+            Hts::FASTX(_) => fastx::info(self.path()),
+            Hts::SAM => align::info(self.path()),
             _ => unimplemented!(),
         }
     }
