@@ -1,4 +1,3 @@
-use crate::utils::detect_filetype;
 use indoc::indoc;
 use regex::Regex;
 use std::collections::HashMap;
@@ -7,6 +6,8 @@ use std::fs::{create_dir, rename, File};
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
+
+use crate::utils::{Hts, HtsFile, Fastx};
 
 type Date = chrono::NaiveDate;
 
@@ -229,46 +230,50 @@ fn create_config(seq: &SeqDir) {
     for entry in WalkDir::new(seq.path.join(Path::new("FASTQs")))
         .into_iter()
         .filter_map(|e| e.ok())
+        .filter(|e| e.path().is_file())
     {
-        let entry_path = entry.path();
+        let hts_file = HtsFile::new(entry.path());
         // don't move directories, only assess FASTQs
-        if entry_path.is_file() && detect_filetype(entry_path) == "FASTQ" {
-            let fname = entry_path.file_name().unwrap().to_str().unwrap();
-            let cap = fq_regex.captures(fname);
-            // deal with the capture
-            match cap {
-                Some(c) => {
-                    let sample = c.get(1).unwrap().as_str().to_owned();
-                    let index = match c.get(2) {
-                        Some(i) => i.as_str().parse::<u8>().unwrap(),
-                        None => 0,
-                    };
-                    let lane = match c.get(3) {
-                        Some(l) => l.as_str().to_string(),
-                        None => "".to_string(),
-                    };
-                    let mate = match c.get(4) {
-                        Some(m) => m.as_str().to_string(),
-                        None => "".to_string(),
-                    };
-                    //check for existing samples of the same name, and add new information
-                    if samples.contains_key(&sample) {
-                        samples
-                            .entry(sample)
-                            .and_modify(|e| update_sample(e, mate, lane));
-                    } else {
-                        let new_sample = SeqSample {
-                            // create a separate copy of this string
-                            sample: sample.to_string(),
-                            index: index,
-                            mates: vec![mate],
-                            lanes: vec![lane],
+        match hts_file.filetype() {
+            Hts::FASTX(Fastx::FASTQ) => {
+                let fname = hts_file.path().file_name().unwrap().to_str().unwrap();
+                let cap = fq_regex.captures(fname);
+                // deal with the capture
+                match cap {
+                    Some(c) => {
+                        let sample = c.get(1).unwrap().as_str().to_owned();
+                        let index = match c.get(2) {
+                            Some(i) => i.as_str().parse::<u8>().unwrap(),
+                            None => 0,
                         };
-                        samples.insert(sample, new_sample);
-                    }
+                        let lane = match c.get(3) {
+                            Some(l) => l.as_str().to_string(),
+                            None => "".to_string(),
+                        };
+                        let mate = match c.get(4) {
+                            Some(m) => m.as_str().to_string(),
+                            None => "".to_string(),
+                        };
+                        //check for existing samples of the same name, and add new information
+                        if samples.contains_key(&sample) {
+                            samples
+                                .entry(sample)
+                                .and_modify(|e| update_sample(e, mate, lane));
+                        } else {
+                            let new_sample = SeqSample {
+                                // create a separate copy of this string
+                                sample: sample.to_string(),
+                                index: index,
+                                mates: vec![mate],
+                                lanes: vec![lane],
+                            };
+                            samples.insert(sample, new_sample);
+                        }
+                    },
+                    None => continue,
                 }
-                None => continue,
-            }
+            },
+            _ => {},
         }
     }
     // write sample information to config.tsv
@@ -366,13 +371,15 @@ pub fn organize(indir: &Path, dryrun: bool, verbose: bool) {
         {
             continue;
         }
+
+        let hts_file = HtsFile::new(entry_path);
         let destdir: PathBuf;
         // find out where the file needs to go
-        match detect_filetype(entry_path) {
-            "FASTA" | "FASTQ" => {
+        match hts_file.filetype() {
+            Hts::FASTX(_) => {
                 destdir = indir.join(Path::new("FASTQs"));
             }
-            "SAM" | "CRAM" => {
+            Hts::SAM | Hts::CRAM => {
                 destdir = indir.join(Path::new("Aligned"));
             }
             _ => {
