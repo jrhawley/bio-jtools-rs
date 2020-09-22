@@ -78,12 +78,12 @@ fn main() {
                         .help("Directory to organize")
                         .required(true),
                 )
-                .arg(
-                    Arg::with_name("type")
-                        .help("New path for input directory")
-                        .possible_values(&["mix", "atac", "chip", "bs", "dna", "rna", "hic"])
-                        .default_value("mix"),
-                )
+                // .arg(
+                //     Arg::with_name("type")
+                //         .help("New path for input directory")
+                //         .possible_values(&["mix", "atac", "chip", "bs", "dna", "rna", "hic"])
+                //         .default_value("mix"),
+                // )
                 .arg(
                     Arg::with_name("dryrun")
                         .short("n")
@@ -160,7 +160,7 @@ fn main() {
         }
     } else if let Some(_o) = _matches.subcommand_matches("org") {
         let dir = value_t!(_o.value_of("dir"), String).unwrap_or_else(|e| e.exit());
-        let seqtype = value_t!(_o.value_of("type"), String).unwrap_or_else(|e| e.exit());
+        // let _seqtype = value_t!(_o.value_of("type"), String).unwrap_or_else(|e| e.exit());
         let indir = Path::new(&dir);
         let dryrun = _o.is_present("dryrun");
         let mut verbose = _o.is_present("verbose");
