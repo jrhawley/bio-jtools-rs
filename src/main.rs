@@ -1,10 +1,13 @@
 use clap::{value_t, values_t, App, Arg, SubCommand};
+use std::fs::File;
+use std::path::Path;
+
 mod data;
 mod fastx;
 mod interval;
 mod utils;
-use std::fs::File;
-use std::path::Path;
+
+use data::organize;
 
 fn main() {
     let _matches = App::new(env!("CARGO_PKG_NAME"))
@@ -45,28 +48,28 @@ fn main() {
                         .required(true),
                 ),
         )
-        .subcommand(
-            SubCommand::with_name("filter")
-                .about("Filter an HTS file by its query names")
-                .arg(
-                    Arg::with_name("hts")
-                        .help("A name-sorted HTS file to filter")
-                        .required(true),
-                )
-                .arg(
-                    Arg::with_name("ids")
-                        .help("Text file containing query name IDs to be removed")
-                        .required(true),
-                )
-                .arg(
-                    Arg::with_name("keep")
-                        .short("k")
-                        .long("keep")
-                        .help("Keep only these IDs, instead of the default which removes them")
-                        .required(false),
-                )
-                .arg(Arg::with_name("output").help("Output file. If not given, print to STDOUT")),
-        )
+        // .subcommand(
+        //     SubCommand::with_name("filter")
+        //         .about("Filter an HTS file by its query names")
+        //         .arg(
+        //             Arg::with_name("hts")
+        //                 .help("A name-sorted HTS file to filter")
+        //                 .required(true),
+        //         )
+        //         .arg(
+        //             Arg::with_name("ids")
+        //                 .help("Text file containing query name IDs to be removed")
+        //                 .required(true),
+        //         )
+        //         .arg(
+        //             Arg::with_name("keep")
+        //                 .short("k")
+        //                 .long("keep")
+        //                 .help("Keep only these IDs, instead of the default which removes them")
+        //                 .required(false),
+        //         )
+        //         .arg(Arg::with_name("output").help("Output file. If not given, print to STDOUT")),
+        // )
         .subcommand(
             SubCommand::with_name("org")
                 .about("Organize a batch of raw sequencing data")
@@ -96,20 +99,20 @@ fn main() {
                         .help("Show verbose output"),
                 ),
         )
-        .subcommand(
-            SubCommand::with_name("kspec")
-                .about("Calculate the k-mer spectra of an HTS file")
-                .arg(
-                    Arg::with_name("hts")
-                        .help("HTS file(s) to calculate spectra from")
-                        .required(true),
-                )
-                .arg(Arg::with_name("k").help("Length of k-mer").required(true)),
-        )
+        // .subcommand(
+        //     SubCommand::with_name("kspec")
+        //         .about("Calculate the k-mer spectra of an HTS file")
+        //         .arg(
+        //             Arg::with_name("hts")
+        //                 .help("HTS file(s) to calculate spectra from")
+        //                 .required(true),
+        //         )
+        //         .arg(Arg::with_name("k").help("Length of k-mer").required(true)),
+        // )
         .get_matches();
 
-    if let Some(o) = _matches.subcommand_matches("info") {
-        let hts = value_t!(o.value_of("hts"), String).unwrap_or_else(|e| e.exit());
+    if let Some(_o) = _matches.subcommand_matches("info") {
+        let hts = value_t!(_o.value_of("hts"), String).unwrap_or_else(|e| e.exit());
         let hts_path = Path::new(&hts);
         // check that supplied HTS file exists
         if !hts_path.exists() {
@@ -122,8 +125,8 @@ fn main() {
             "FASTQ" => fastx::info(hts_path),
             _ => unimplemented!(),
         }
-    } else if let Some(o) = _matches.subcommand_matches("jaccard") {
-        let beds = values_t!(o.values_of("bed"), String).unwrap_or_else(|e| e.exit());
+    } else if let Some(_o) = _matches.subcommand_matches("jaccard") {
+        let beds = values_t!(_o.values_of("bed"), String).unwrap_or_else(|e| e.exit());
         let bed_paths: Vec<&Path> = beds.iter().map(|b| Path::new(b)).collect();
         // check that supplied BED files exists
         for b in &bed_paths {
@@ -141,10 +144,10 @@ fn main() {
             _ => {
                 let m = interval::multijaccard(&bed_paths);
                 // write to output or print to STDOUT
-                if o.is_present("output") {
+                if _o.is_present("output") {
                     // get output file as string
                     let outfile =
-                        value_t!(o.value_of("output"), String).unwrap_or_else(|e| e.exit());
+                        value_t!(_o.value_of("output"), String).unwrap_or_else(|e| e.exit());
                     // create file handle for output
                     let out = File::create(outfile).unwrap();
                     // save to CSV file
@@ -155,12 +158,12 @@ fn main() {
                 }
             }
         }
-    } else if let Some(o) = _matches.subcommand_matches("org") {
-        let dir = value_t!(o.value_of("dir"), String).unwrap_or_else(|e| e.exit());
-        let seqtype = value_t!(o.value_of("type"), String).unwrap_or_else(|e| e.exit());
+    } else if let Some(_o) = _matches.subcommand_matches("org") {
+        let dir = value_t!(_o.value_of("dir"), String).unwrap_or_else(|e| e.exit());
+        let seqtype = value_t!(_o.value_of("type"), String).unwrap_or_else(|e| e.exit());
         let indir = Path::new(&dir);
-        let dryrun = o.is_present("dryrun");
-        let mut verbose = o.is_present("verbose");
+        let dryrun = _o.is_present("dryrun");
+        let mut verbose = _o.is_present("verbose");
         // if dryrun is flagged, set verbose automatically
         verbose = verbose || dryrun;
         if !indir.exists() {
@@ -169,11 +172,11 @@ fn main() {
         if !indir.is_dir() {
             println!("{} is not a directory. Exiting.", indir.display());
         } else {
-            data::organize(indir, &seqtype, dryrun, verbose);
+            organize(indir, dryrun, verbose);
         }
-    } else if let Some(o) = _matches.subcommand_matches("kspec") {
+    } else if let Some(_o) = _matches.subcommand_matches("kspec") {
         unimplemented!();
-    } else if let Some(o) = _matches.subcommand_matches("filter") {
+    } else if let Some(_o) = _matches.subcommand_matches("filter") {
         unimplemented!();
     }
 }
