@@ -1,11 +1,12 @@
-// use fastq::parse_path;
 use needletail::parse_sequence_path;
 use std::collections::HashSet;
-use std::path::Path;
 use std::str;
 use std::string::String;
 
-pub fn info(path: &Path) {
+use crate::utils::HtsFile;
+
+/// Print information about the FASTX file
+pub fn info(hts: &HtsFile) {
     // values to keep and display
     let mut n_records: u32 = 0; // number of records
     let mut n_bases: u32 = 0; // number of bases
@@ -13,7 +14,7 @@ pub fn info(path: &Path) {
 
     // parse the FASTQ
     parse_sequence_path(
-        path,
+        hts.path(),
         |_| {},
         |seq| {
             // add to n_records count

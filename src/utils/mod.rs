@@ -77,8 +77,8 @@ impl HtsFile {
     /// Print HTS file information
     pub fn print_info(&self) {
         match self.hts_type {
-            Hts::FASTX(_) => fastx::info(self.path()),
-            Hts::SAM => align::info(self.path()),
+            Hts::FASTX(_) => fastx::info(&self),
+            Hts::SAM => align::info(&self),
             _ => unimplemented!(),
         }
     }
