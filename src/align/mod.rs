@@ -5,7 +5,7 @@ use crate::utils::HtsFile;
 fn get_reader(hts: &HtsFile) -> Box<dyn RecordReader> {
     match hts.is_zipped() {
         // create a reader object that parses the file with 4 threads
-        true => Box::new(BamReader::from_path(hts.path(), 4).unwrap()),
+        true => Box::new(BamReader::from_path(hts.path(), 1).unwrap()),
         // create a reader object that parses the file with a single thread if unzipped
         false => Box::new(SamReader::from_path(hts.path()).unwrap()),
     }
@@ -25,14 +25,17 @@ pub fn info(hts: &HtsFile) {
     // parse the alignment file
     loop {
         match (*reader).read_into(&mut record) {
-            Ok(false) => n_errs +=1,
+            // if no records left
+            Ok(false) => break,
+            // if record
             Ok(true) => {
                 // add to n_records count
                 n_records += 1;
                 // keep track of the n_records number of bases
                 n_bases += record.sequence().len() as u32;
             },
-            Err(e) => panic!("{}", e),
+            // if error parsing record
+            Err(e) => n_errs +=1 ,
         }
     }
 
