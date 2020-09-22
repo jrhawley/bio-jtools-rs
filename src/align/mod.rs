@@ -24,6 +24,7 @@ pub fn info(hts: &HtsFile) {
 
     // parse the alignment file
     loop {
+        // there's something really slow about this assignment step, I think I might need to take a different approach to keep this fast
         match (*reader).read_into(&mut record) {
             // if no records left
             Ok(false) => break,
@@ -35,7 +36,7 @@ pub fn info(hts: &HtsFile) {
                 n_bases += record.sequence().len() as u32;
             },
             // if error parsing record
-            Err(e) => n_errs +=1 ,
+            Err(e) => n_errs += 1 ,
         }
     }
 
