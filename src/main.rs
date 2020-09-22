@@ -94,16 +94,6 @@ fn main() {
                         .help("Show verbose output"),
                 ),
         )
-        // .subcommand(
-        //     SubCommand::with_name("kspec")
-        //         .about("Calculate the k-mer spectra of an HTS file")
-        //         .arg(
-        //             Arg::with_name("hts")
-        //                 .help("HTS file(s) to calculate spectra from")
-        //                 .required(true),
-        //         )
-        //         .arg(Arg::with_name("k").help("Length of k-mer").required(true)),
-        // )
         .get_matches();
 
     if let Some(_o) = _matches.subcommand_matches("info") {
