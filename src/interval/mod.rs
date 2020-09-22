@@ -6,6 +6,8 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
 
+use crate::utils::HtsFile;
+
 type Iv = Interval<u32>;
 
 fn line_to_intvl(line: Result<String, io::Error>) -> (String, Iv) {
@@ -49,10 +51,10 @@ fn file_to_chromlap(file: File) -> HashMap<String, Lapper<u32>> {
     return lap;
 }
 
-pub fn jaccard(a: &Path, b: &Path) -> (u32, u32, f64) {
+pub fn jaccard(a: &HtsFile, b: &HtsFile) -> (u32, u32, f64) {
     // naive implementation: load both files into memory and intersect them
-    let file_a = File::open(a).unwrap();
-    let file_b = File::open(b).unwrap();
+    let file_a = File::open(a.path()).unwrap();
+    let file_b = File::open(b.path()).unwrap();
     // create HashMap of the data, by chromosome
     let lap_a = file_to_chromlap(file_a);
     let lap_b = file_to_chromlap(file_b);
@@ -91,7 +93,7 @@ pub fn jaccard(a: &Path, b: &Path) -> (u32, u32, f64) {
     return (intersect, union, j);
 }
 
-pub fn multijaccard(paths: &Vec<&Path>) -> Table {
+pub fn multijaccard(files: &Vec<&HtsFile>) -> Table {
     // matrix to store pairwise results
     let mut m = Table::new();
     // add extra column and row for paths
@@ -99,21 +101,21 @@ pub fn multijaccard(paths: &Vec<&Path>) -> Table {
     let header = vec![""]
         .iter()
         .cloned()
-        .chain(paths.iter().map(|p| p.to_str().unwrap()))
+        .chain(files.iter().map(|h| h.path().to_str().unwrap()))
         .collect::<Vec<_>>();
 
     m.set_titles(Row::new(
         header.iter().map(|p| Cell::new(p)).collect::<Vec<_>>(),
     ));
-    for (i, p) in paths.iter().enumerate() {
+    for (i, p) in files.iter().enumerate() {
         let diag = vec!["1"];
-        let mut padding: Vec<&str> = vec![p.to_str().unwrap()]
+        let mut padding: Vec<&str> = vec![p.path().to_str().unwrap()]
             .iter()
             .cloned()
             .chain(vec![""; i])
             .collect::<Vec<_>>();
         padding = padding.iter().cloned().chain(diag).collect::<Vec<_>>();
-        let remainder: Vec<String> = paths[(i + 1)..paths.len()]
+        let remainder: Vec<String> = files[(i + 1)..files.len()]
             .iter()
             .map(|q| jaccard(p, q).2.to_string())
             .collect();

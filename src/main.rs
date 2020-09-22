@@ -122,16 +122,18 @@ fn main() {
         hts_file.print_info();
     } else if let Some(_o) = _matches.subcommand_matches("jaccard") {
         let beds = values_t!(_o.values_of("bed"), String).unwrap_or_else(|e| e.exit());
-        let bed_paths: Vec<HtsFile> = beds.iter().map(|b| HtsFile::new(Path::new(b))).collect();
+        let hts_files: Vec<HtsFile> = beds.iter().map(|b| HtsFile::new(Path::new(b))).collect();
 
-        match bed_paths.len() {
+        match hts_files.len() {
             1 => println!("Only 1 interval file, which is obviously self-similar."),
             2 => {
-                let (i, u, j) = interval::jaccard(&bed_paths[0], &bed_paths[1]);
+                let (i, u, j) = interval::jaccard(&hts_files[0], &hts_files[1]);
                 println!("{}, {}, {}", i, u, j);
             }
             _ => {
-                let m = interval::multijaccard(&bed_paths);
+                // convert the Vec<HtsFile> to Vec<&HtsFile> before calculating
+                // Jaccard index on each pair of elements
+                let m = interval::multijaccard(&hts_files.iter().collect::<Vec<&HtsFile>>());
                 // write to output or print to STDOUT
                 if _o.is_present("output") {
                     // get output file as string
