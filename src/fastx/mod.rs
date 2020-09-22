@@ -7,8 +7,8 @@ use std::string::String;
 
 pub fn info(path: &Path) {
     // values to keep and display
-    let mut n_records: usize = 0; // number of records
-    let mut n_bases: usize = 0; // number of bases
+    let mut n_records: u32 = 0; // number of records
+    let mut n_bases: u32 = 0; // number of bases
     let mut instruments: HashSet<String> = HashSet::new(); // sequencing instrument IDs
 
     // parse the FASTQ
@@ -19,7 +19,7 @@ pub fn info(path: &Path) {
             // add to n_records count
             n_records += 1;
             // keep track of the n_records number of bases
-            n_bases += seq.seq.len();
+            n_bases += seq.seq.len() as u32;
             // parse the instruments machine ID (always at the beginning of a read ID for the new Illumina encodings)
             let id_val = str::from_utf8(
                 seq.id

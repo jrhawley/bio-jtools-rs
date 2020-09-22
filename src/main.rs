@@ -8,6 +8,7 @@ mod interval;
 mod utils;
 
 use data::organize;
+use utils::HtsFile;
 
 fn main() {
     let _matches = App::new(env!("CARGO_PKG_NAME"))
@@ -114,27 +115,15 @@ fn main() {
     if let Some(_o) = _matches.subcommand_matches("info") {
         let hts = value_t!(_o.value_of("hts"), String).unwrap_or_else(|e| e.exit());
         let hts_path = Path::new(&hts);
-        // check that supplied HTS file exists
-        if !hts_path.exists() {
-            println!("{} does not exist. Exiting.", &hts);
-            return;
-        }
-        let ftype = utils::detect_filetype(&hts_path);
 
-        match ftype {
-            "FASTQ" => fastx::info(hts_path),
-            _ => unimplemented!(),
-        }
+        // create HtsFile object for the file provided
+        let hts_file = HtsFile::new(&hts_path);
+
+        hts_file.print_info();
     } else if let Some(_o) = _matches.subcommand_matches("jaccard") {
         let beds = values_t!(_o.values_of("bed"), String).unwrap_or_else(|e| e.exit());
-        let bed_paths: Vec<&Path> = beds.iter().map(|b| Path::new(b)).collect();
-        // check that supplied BED files exists
-        for b in &bed_paths {
-            if !b.exists() {
-                println!("{:?} does not exist. Exiting.", b);
-                return;
-            }
-        }
+        let bed_paths: Vec<HtsFile> = beds.iter().map(|b| HtsFile::new(Path::new(b))).collect();
+
         match bed_paths.len() {
             1 => println!("Only 1 interval file, which is obviously self-similar."),
             2 => {
