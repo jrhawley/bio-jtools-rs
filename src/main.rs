@@ -79,12 +79,6 @@ fn main() {
                         .help("Directory to organize")
                         .required(true),
                 )
-                // .arg(
-                //     Arg::with_name("type")
-                //         .help("New path for input directory")
-                //         .possible_values(&["mix", "atac", "chip", "bs", "dna", "rna", "hic"])
-                //         .default_value("mix"),
-                // )
                 .arg(
                     Arg::with_name("dryrun")
                         .short("n")
@@ -165,9 +159,5 @@ fn main() {
         } else {
             organize(indir, dryrun, verbose);
         }
-    } else if let Some(_o) = _matches.subcommand_matches("kspec") {
-        unimplemented!();
-    } else if let Some(_o) = _matches.subcommand_matches("filter") {
-        unimplemented!();
     }
 }
