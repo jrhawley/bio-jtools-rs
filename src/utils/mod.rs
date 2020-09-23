@@ -116,10 +116,17 @@ impl HtsFile {
 
 /// Determine if a file is compressed or not
 fn file_is_zipped(path: &Path) -> bool {
-    let ext = path.extension().unwrap().to_str().unwrap();
-    match ext {
-        "gz" | "bz2" => true,
-        _ => false,
+    if !path.is_file() {
+        return false;
+    }
+    match path.extension() {
+        Some(ext) => {
+            match ext.to_str() {
+                Some("gz") | Some("bz2") => true,
+                _ => false,
+            }
+        },
+        None => false,
     }
 }
 
@@ -135,23 +142,28 @@ pub fn detect_filetype(path: &Path) -> Option<Hts> {
         stem = path;
     }
 
-    match stem.extension().unwrap().to_str().unwrap() {
-        "bam"          => Some(Hts::BAM),
-        "sam"          => Some(Hts::SAM),
-        "cram"         => Some(Hts::CRAM),
-        "fasta" | "fa" => Some(Hts::FASTX(Fastx::FASTA)),
-        "fastq" | "fq" => Some(Hts::FASTX(Fastx::FASTQ)),
-        "bcf"          => Some(Hts::BCF),
-        "vcf"          => Some(Hts::VCF),
-        "maf"          => Some(Hts::MAF),
-        "tbx"          => Some(Hts::TABIX(Tabix::Tab)),
-        "gff"          => Some(Hts::TABIX(Tabix::GFF)),
-        "gtf"          => Some(Hts::TABIX(Tabix::GTF)),
-        "bed"          => Some(Hts::BED(Bed::BED)),
-        "bedpe"        => Some(Hts::BED(Bed::BEDPE)),
-        "narrowPeak"   => Some(Hts::Peak(Peak::NarrowPeak)),
-        "broadPeak"    => Some(Hts::Peak(Peak::BroadPeak)),
-        "gappedPeak"   => Some(Hts::Peak(Peak::GappedPeak)),
-        _ => None,
+    match stem.extension() {
+        Some(ext) => {
+            match ext.to_str() {
+                Some("bam")                => Some(Hts::BAM),
+                Some("sam")                => Some(Hts::SAM),
+                Some("cram")               => Some(Hts::CRAM),
+                Some("fasta") | Some("fa") => Some(Hts::FASTX(Fastx::FASTA)),
+                Some("fastq") | Some("fq") => Some(Hts::FASTX(Fastx::FASTQ)),
+                Some("bcf")                => Some(Hts::BCF),
+                Some("vcf")                => Some(Hts::VCF),
+                Some("maf")                => Some(Hts::MAF),
+                Some("tbx")                => Some(Hts::TABIX(Tabix::Tab)),
+                Some("gff")                => Some(Hts::TABIX(Tabix::GFF)),
+                Some("gtf")                => Some(Hts::TABIX(Tabix::GTF)),
+                Some("bed")                => Some(Hts::BED(Bed::BED)),
+                Some("bedpe")              => Some(Hts::BED(Bed::BEDPE)),
+                Some("narrowPeak")         => Some(Hts::Peak(Peak::NarrowPeak)),
+                Some("broadPeak")          => Some(Hts::Peak(Peak::BroadPeak)),
+                Some("gappedPeak")         => Some(Hts::Peak(Peak::GappedPeak)),
+                _ => None,
+            }
+        },
+        None => None,
     }
 }
