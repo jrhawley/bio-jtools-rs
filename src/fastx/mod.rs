@@ -1,11 +1,13 @@
-// use fastq::parse_path;
 use needletail::parse_sequence_path;
 use std::collections::HashSet;
-use std::path::Path;
 use std::str;
 use std::string::String;
+use prettytable::{row, cell, format, Table};
 
-pub fn info(path: &Path) {
+use crate::utils::HtsFile;
+
+/// Print information about the FASTX file
+pub fn info(hts: &HtsFile) {
     // values to keep and display
     let mut n_records: u32 = 0; // number of records
     let mut n_bases: u32 = 0; // number of bases
@@ -13,7 +15,7 @@ pub fn info(path: &Path) {
 
     // parse the FASTQ
     parse_sequence_path(
-        path,
+        hts.path(),
         |_| {},
         |seq| {
             // add to n_records count
@@ -36,8 +38,22 @@ pub fn info(path: &Path) {
     )
     .expect("Error parsing FASTQ. Possible invalid compression.");
 
-    // print output
-    println!("{} bases", n_bases);
-    println!("{} reads", n_records);
-    println!("Instruments: {:?}", instruments);
+    // format a string of all the instruments found
+    let instruments = instruments.iter().map(|s| s.as_str()).collect::<Vec<&str>>(); // first convert to Vec for easy slicing
+    let mut inst_str = String::from(instruments[0]);
+    for inst in &instruments[1..] {
+        inst_str.push_str(format!(", {}", inst).as_str());
+    }
+
+    // construct a table for display
+    let mut tab = Table::new();
+    tab.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+    tab.set_titles(row!["Statistic", "Value"]);
+
+    tab.add_row(row!["Records", n_records]);
+    tab.add_row(row!["Bases", n_bases]);
+    tab.add_row(row!["Instruments", inst_str]);
+
+    // print to STDOUT
+    tab.printstd();
 }
