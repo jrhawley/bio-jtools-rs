@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use prettytable::{Cell, Row, Table};
+use prettytable::{Cell, Row, Table, format};
 use rust_lapper::{Interval, Lapper};
 use std::collections::HashMap;
 use std::fs::File;
@@ -95,6 +95,7 @@ pub fn jaccard(a: &HtsFile, b: &HtsFile) -> (u32, u32, f64) {
 pub fn multijaccard(files: &Vec<&HtsFile>) -> Table {
     // matrix to store pairwise results
     let mut m = Table::new();
+    m.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
     // add extra column and row for paths
     // create header
     let header = vec![""]
@@ -103,24 +104,31 @@ pub fn multijaccard(files: &Vec<&HtsFile>) -> Table {
         .chain(files.iter().map(|h| h.path().to_str().unwrap()))
         .collect::<Vec<_>>();
 
+    // set titles of table as filenames of provided BED files
     m.set_titles(Row::new(
         header.iter().map(|p| Cell::new(p)).collect::<Vec<_>>(),
     ));
+    // iterate over pairs of BED files
     for (i, p) in files.iter().enumerate() {
+        // skip self-similar calculations
         let diag = vec!["1"];
+        // empty spaces in the table to only calculate pairs once
         let mut padding: Vec<&str> = vec![p.path().to_str().unwrap()]
             .iter()
             .cloned()
             .chain(vec![""; i])
             .collect::<Vec<_>>();
         padding = padding.iter().cloned().chain(diag).collect::<Vec<_>>();
+        // calculate pairwise Jaccard indices for each remaining pair of files
         let remainder: Vec<String> = files[(i + 1)..files.len()]
             .iter()
             .map(|q| jaccard(p, q).2.to_string())
             .collect();
+        // convert the values in a Vec, append to padding, then make into a table row
         let remainder_str: Vec<&str> = remainder.iter().map(|q| q.as_str()).collect();
         let entire_row: Vec<&str> = padding.into_iter().chain(remainder_str).collect();
         m.add_row(Row::new(entire_row.iter().map(|r| Cell::new(r)).collect()));
     }
+    // return the table for printing or saving
     return m;
 }
