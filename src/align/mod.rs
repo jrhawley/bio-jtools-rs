@@ -1,49 +1,51 @@
 use bam::{RecordReader, BamReader, SamReader};
+use prettytable::{row, cell, format, Table};
 
-use crate::utils::HtsFile;
+use crate::utils::{Hts, HtsFile};
 
-fn get_reader(hts: &HtsFile) -> Box<dyn RecordReader> {
-    match hts.is_zipped() {
-        // create a reader object that parses the file with 4 threads
-        true => Box::new(BamReader::from_path(hts.path(), 1).unwrap()),
-        // create a reader object that parses the file with a single thread if unzipped
-        false => Box::new(SamReader::from_path(hts.path()).unwrap()),
-    }
-}
-
-/// Print information about the alignment file
-pub fn info(hts: &HtsFile) {
-    let mut reader: Box<dyn RecordReader> = get_reader(hts);
-
+fn algn_parser<T: RecordReader>(reader: &mut T) {
     // values to keep and display
     let mut n_records: u32 = 0; // number of records
     let mut n_bases: u32 = 0; // number of bases
     let mut n_errs: u32 = 0; // number of alignments resulting in parse errors
 
-    let mut record = bam::Record::new();
-
     // parse the alignment file
-    loop {
-        // there's something really slow about this assignment step, I think I might need to take a different approach to keep this fast
-        match (*reader).read_into(&mut record) {
-            // if no records left
-            Ok(false) => break,
-            // if record
-            Ok(true) => {
+    for record in reader {
+        match record {
+            Ok(rec) => {
                 // add to n_records count
                 n_records += 1;
                 // keep track of the n_records number of bases
-                n_bases += record.sequence().len() as u32;
+                n_bases += rec.sequence().len() as u32;
             },
-            // if error parsing record
-            Err(e) => n_errs += 1 ,
+            Err(_) => n_errs += 1,
         }
     }
 
-    // print output
-    println!("{} bases", n_bases);
-    println!("{} reads", n_records);
-    if n_errs > 0 {
-        println!("{} alignments containing errors", n_errs);
+    // construct a table for display
+    let mut tab = Table::new();
+    tab.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
+    tab.set_titles(row!["Statistic", "Value"]);
+
+    tab.add_row(row!["Records", n_records]);
+    tab.add_row(row!["Bases", n_bases]);
+    tab.add_row(row!["Errors", n_errs]);
+
+    // print to STDOUT
+    tab.printstd();
+}
+
+/// Print information about the alignment file
+pub fn info(hts: &HtsFile) {
+    match hts.filetype() {
+        Hts::BAM => {
+            let mut reader = BamReader::from_path(hts.path(), 3).unwrap();
+            algn_parser(&mut reader)
+        },
+        Hts::SAM => {
+            let mut reader = SamReader::from_path(hts.path()).unwrap();
+            algn_parser(&mut reader)
+        },
+        _ => (),
     }
 }
