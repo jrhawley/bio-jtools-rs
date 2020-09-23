@@ -33,7 +33,6 @@ pub enum Tabix {
 pub enum Bed {
     BED,
     BEDPE,
-    Peak,
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -124,7 +123,7 @@ fn file_is_zipped(path: &Path) -> bool {
     }
 }
 
-fn detect_filetype(path: &Path) -> Option<Hts> {
+pub fn detect_filetype(path: &Path) -> Option<Hts> {
     if !path.exists() {
         return None;
     }

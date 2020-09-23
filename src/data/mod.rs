@@ -6,20 +6,194 @@ use std::fs::{create_dir, rename, File};
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
+use chrono::Local;
 
-use crate::utils::{Hts, HtsFile, Fastx};
+use crate::utils::{Hts, HtsFile, Fastx, detect_filetype};
 
 type Date = chrono::NaiveDate;
+
+const RESERVED_DIRNAMES: [&'static str; 6] = ["Reports", "FASTQs", "Trimmed", "Aligned", "Peaks", "Variants"];
+const RESERVED_FILENAMES: [&'static str; 4]= ["README.md", "Snakefile", "cluster.yaml", "config.tsv"];
+const DIR_REGEX: Regex = Regex::new(r"^([0-9]{2})(0?[1-9]|1[012])(0[1-9]|[12]\d|3[01])_(\w{3,})_(\d{4})_(A|B)(\w{9})(.*)?").unwrap();
 
 #[derive(Debug)]
 struct SeqDir<'a> {
     path: &'a Path,
     date: Date,
     instrument: &'a str,
-    run: u16,
+    run: u8,
     position: char,
     flowcell: &'a str,
     description: &'a str,
+}
+
+impl<'a> SeqDir<'a> {
+    /// Construct a new SeqDir object from a path
+    pub fn new(path: &'a Path) -> SeqDir<'a> {
+        let dir_stem = path.file_stem().unwrap();
+        // try extracting flowcell information from directory name
+        let dir_stem_capture_attempt = DIR_REGEX.captures(dir_stem.to_str().unwrap());
+        match dir_stem_capture_attempt {
+            Some(cap) => {
+                // extract sequencing date
+                let date = Date::parse_from_str(
+                    &format!(
+                        "{}{}{}",
+                        cap.get(1).unwrap().as_str(),
+                        cap.get(2).unwrap().as_str(),
+                        cap.get(3).unwrap().as_str()
+                    ),
+                    "%y%m%d",
+                ).unwrap();
+                let instrument = cap.get(4).unwrap().as_str();
+                let run = cap.get(5).unwrap().as_str().parse::<u16>().unwrap();
+                let pos = cap.get(6).unwrap().as_str().parse::<char>().unwrap();
+                let flowcell = cap.get(7).unwrap().as_str();
+                let description = cap.get(8).unwrap().as_str();
+                
+                SeqDir {
+                    path: path,
+                    date: date,
+                    instrument: instrument,
+                    run: run,
+                    position: pos,
+                    flowcell: flowcell,
+                    description: description,
+                }
+            },
+            // if no regex match, return the default SeqDir initialization
+            None => SeqDir {
+                path: path,
+                date: Local::today().naive_local(),
+                instrument: "",
+                run: 0,
+                position: '?',
+                flowcell: "",
+                description: "",
+            }
+        }
+    }
+
+    /// Path to SeqDir
+    pub fn path(&self) -> &Path {
+        self.path
+    }
+
+    /// Date of SeqDir creation
+    pub fn date(&self) -> Date {
+        self.date
+    }
+
+    /// Sequencing instrument use to create SeqDir
+    pub fn instrument(&self) -> &str {
+        self.instrument
+    }
+
+    /// Run number of SeqDir run
+    pub fn run(&self) -> u8 {
+        self.run
+    }
+
+    /// Position of the flowcell in the sequencer
+    pub fn position(&self) -> char {
+        self.position
+    }
+
+    /// Flowcell ID that generated the SeqDir
+    pub fn flowcell(&self) -> &str {
+        self.flowcell
+    }
+
+    /// General description of the sequencing run
+    pub fn description(&self) -> &str {
+        self.description
+    }
+
+    /// Create the reserved files, if they are missing from the SeqDir
+    pub fn create_reserved_files(&self, verbose: bool, dryrun: bool) {
+        // create non-existent reserved files
+        if verbose {
+            println!("Creating files...");
+        }
+        for f in &RESERVED_FILENAMES {
+            let p = self.path().join(Path::new(&f));
+            if !p.as_path().exists() {
+                if verbose {
+                    println!("  {}", f);
+                }
+                if !dryrun {
+                    create_reserved_file(self, f);
+                }
+            }
+        }
+    }
+
+    /// Create the reserved directories, if they are missing from the SeqDir
+    pub fn create_reserved_dirs(&self, verbose: bool, dryrun: bool) {
+        // create non-existent reserved directories
+        if verbose {
+            println!("Creating directories...");
+        }
+        for d in &RESERVED_DIRNAMES {
+            let p = self.path().join(Path::new(&d));
+            if !p.as_path().exists() {
+                if verbose {
+                    println!("  {}", d);
+                }
+                if !dryrun {
+                    create_reserved_dir(p);
+                }
+            }
+        }
+    }
+
+    /// Relocate HTS files into the appropriate reserved directories
+    pub fn relocate_hts_files(&self, verbose: bool, dryrun: bool) {
+        // find and relocate FASTQs, if necessary
+        if verbose {
+            println!("Moving sequencing files...");
+        }
+
+
+        // walk over all HTS files in the folder
+        for hts in WalkDir::new(self.path())
+            .into_iter()
+            .filter_map(|e| e.ok())                             // only consider correct entries
+            .filter(|e| e.path().is_file())                     // only consider files
+            .filter(|e| detect_filetype(e.path()).is_some())    // only consider HtsFiles
+            .map(|e| HtsFile::new(e.path()))                    // convert to HtsFile object
+        {
+            let destdir: PathBuf;
+            // find out where the file needs to go
+            match hts.filetype() {
+                Hts::FASTX(_) => {
+                    destdir = self.path().join(Path::new("FASTQs"));
+                }
+                Hts::BAM | Hts::SAM | Hts::CRAM => {
+                    destdir = self.path().join(Path::new("Aligned"));
+                }
+                Hts::BCF | Hts::VCF | Hts::MAF => {
+                    destdir = self.path().join(Path::new("Variants"));
+                },
+                Hts::Peak(_) => {
+                    destdir = self.path().join(Path::new("Peaks"));
+                },
+                _ => {
+                    destdir = self.path().join(Path::new("Reports"));
+                }
+            }
+            if !dryrun {
+                mv_to_dir(hts.path(), destdir.as_path());
+            }
+            if verbose {
+                println!(
+                    "  {} -> {}",
+                    hts.path().display(),
+                    destdir.as_path().join(hts.path().file_name().unwrap()).display()
+                );
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -227,12 +401,14 @@ fn create_config(seq: &SeqDir) {
     )
     .unwrap();
     let mut samples = HashMap::<String, SeqSample>::new();
-    for entry in WalkDir::new(seq.path.join(Path::new("FASTQs")))
+    
+    // walk over all HTS files in the folder
+    for hts in WalkDir::new(seq.path.join(Path::new("FASTQs")))
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| e.path().is_file())
+        .filter_map(|e| detect_filetype(e.path()))
     {
-        let hts_file = HtsFile::new(entry.path());
         // don't move directories, only assess FASTQs
         match hts_file.filetype() {
             Hts::FASTX(Fastx::FASTQ) => {
@@ -298,108 +474,14 @@ fn mv_to_dir(file: &Path, dir: &Path) {
     rename(file, dir.join(file.file_name().unwrap())).expect("Failed to move file.");
 }
 
-pub fn organize(indir: &Path, dryrun: bool, verbose: bool) {
-    let reserved_dirnames = vec!["Reports", "FASTQs", "Trimmed", "Aligned"];
-    let reserved_filenames = vec!["README.md", "Snakefile", "cluster.yaml", "config.tsv"];
-    let dir_regex = Regex::new(
-        r"^([0-9]{2})(0?[1-9]|1[012])(0[1-9]|[12]\d|3[01])_(\w{3,})_(\d{4})_(A|B)(\w{9})(.*)?",
-    )
-    .unwrap();
-    let dir_stem = indir.file_stem().unwrap();
-    // extract flowcell information from directory name
-    let cap = dir_regex.captures(dir_stem.to_str().unwrap()).unwrap();
-    let date = Date::parse_from_str(
-        &format!(
-            "{}{}{}",
-            cap.get(1).unwrap().as_str(),
-            cap.get(2).unwrap().as_str(),
-            cap.get(3).unwrap().as_str()
-        ),
-        "%y%m%d",
-    )
-    .unwrap();
-    let sd = SeqDir {
-        path: indir,
-        date: date,
-        instrument: cap.get(4).unwrap().as_str(),
-        run: cap.get(5).unwrap().as_str().parse::<u16>().unwrap(),
-        position: cap.get(6).unwrap().as_str().parse::<char>().unwrap(),
-        flowcell: cap.get(7).unwrap().as_str(),
-        description: cap.get(8).unwrap().as_str(),
-    };
-    // create non-existant reserved files
-    if verbose {
-        println!("Creating files...");
-    }
-    for f in &reserved_filenames {
-        let p = indir.join(Path::new(&f));
-        if !p.as_path().exists() {
-            if !dryrun {
-                create_reserved_file(&sd, f);
-            } else {
-                println!("  {}", f);
-            }
-        }
-    }
-    // create non-existant reserved directories
-    if verbose {
-        println!("Creating directories...");
-    }
-    for d in &reserved_dirnames {
-        let p = indir.join(Path::new(&d));
-        if !p.as_path().exists() {
-            if !dryrun {
-                create_reserved_dir(p);
-            } else {
-                println!("  {}", d);
-            }
-        }
-    }
-    // find and relocate FASTQs, if necessary
-    if verbose {
-        println!("Moving sequencing files...");
-    }
-    for entry in WalkDir::new(indir).into_iter().filter_map(|e| e.ok()) {
-        let entry_path = entry.path();
-        // don't move directories
-        if entry_path.is_dir() {
-            continue;
-        // don't move reserved file names
-        } else if reserved_filenames
-            .iter()
-            .any(|&i| i == entry_path.file_name().unwrap().to_str().unwrap())
-        {
-            continue;
-        }
+// 
 
-        let hts_file = HtsFile::new(entry_path);
-        let destdir: PathBuf;
-        // find out where the file needs to go
-        match hts_file.filetype() {
-            Hts::FASTX(_) => {
-                destdir = indir.join(Path::new("FASTQs"));
-            }
-            Hts::SAM | Hts::CRAM => {
-                destdir = indir.join(Path::new("Aligned"));
-            }
-            _ => {
-                destdir = indir.join(Path::new("Reports"));
-            }
-        }
-        if !dryrun {
-            mv_to_dir(entry_path, destdir.as_path());
-        }
-        if verbose {
-            println!(
-                "  {} -> {}",
-                entry_path.display(),
-                destdir
-                    .as_path()
-                    .join(entry_path.file_name().unwrap())
-                    .display()
-            );
-        }
-    }
+pub fn organize(indir: &Path, dryrun: bool, verbose: bool) {
+    let sd = SeqDir::new(indir);
+    sd.create_reserved_files(verbose, dryrun);
+    sd.create_reserved_dirs(verbose, dryrun);
+    sd.relocate_hts_files(verbose, dryrun);
+    
     // extract sample information from FASTQs, reorganize
     if verbose {
         println!("Extracting sample information...");
