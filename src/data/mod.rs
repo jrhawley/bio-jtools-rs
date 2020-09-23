@@ -385,7 +385,7 @@ fn update_sample(s: &mut SeqSample, mate: String, lane: String) {
     }
 }
 
-fn create_config(sd: &SeqDir) {
+fn create_config(sd: &SeqDir, dryrun: bool) {
     // return if the config already exists
     if sd.path().join(Path::new("config.tsv")).exists() {
         return;
@@ -454,20 +454,22 @@ fn create_config(sd: &SeqDir) {
         }
     }
     // write sample information to config.tsv
-    let p = sd.path().join(Path::new("config.tsv"));
-    let mut file = match File::create(&p) {
-        // The `description` method of `io::Error` returns a string that
-        Err(why) => panic!("couldn't open {}: {}", p.display(), why.to_string()),
-        Ok(file) => file,
-    };
-    let mut text = "Sample_ID\tSample_Index\tMates\tLanes\tDescription\n".to_string();
-    // append new row for each sample
-    for (_, s) in &samples {
-        text.push_str(&format!("{}", s));
-    }
-    match file.write_all(text.as_bytes()) {
-        Err(why) => panic!("couldn't write to {}: {}", p.display(), why.to_string()),
-        Ok(_) => return,
+    if !dryrun {
+        let p = sd.path().join(Path::new("config.tsv"));
+        let mut file = match File::create(&p) {
+            // The `description` method of `io::Error` returns a string that
+            Err(why) => panic!("couldn't open {}: {}", p.display(), why.to_string()),
+            Ok(file) => file,
+        };
+        let mut text = "Sample_ID\tSample_Index\tMates\tLanes\tDescription\n".to_string();
+        // append new row for each sample
+        for (_, s) in &samples {
+            text.push_str(&format!("{}", s));
+        }
+        match file.write_all(text.as_bytes()) {
+            Err(why) => panic!("couldn't write to {}: {}", p.display(), why.to_string()),
+            Ok(_) => return,
+        }
     }
 }
 
@@ -487,7 +489,7 @@ pub fn organize(indir: &Path, dryrun: bool, verbose: bool) {
     if verbose {
         println!("Extracting sample information...");
     }
-    create_config(&sd);
+    create_config(&sd, dryrun);
     if verbose {
         println!("Done.");
     }
