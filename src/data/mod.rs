@@ -12,9 +12,8 @@ use crate::utils::{Hts, HtsFile, Fastx, detect_filetype};
 
 type Date = chrono::NaiveDate;
 
-const RESERVED_DIRNAMES: [&'static str; 6] = ["Reports", "FASTQs", "Trimmed", "Aligned", "Peaks", "Variants"];
-const RESERVED_FILENAMES: [&'static str; 4]= ["README.md", "Snakefile", "cluster.yaml", "config.tsv"];
-const DIR_REGEX: Regex = Regex::new(r"^([0-9]{2})(0?[1-9]|1[012])(0[1-9]|[12]\d|3[01])_(\w{3,})_(\d{4})_(A|B)(\w{9})(.*)?").unwrap();
+const RESERVED_DIRNAMES: [&'static str; 7] = ["Reports", "FASTQs", "Trimmed", "Aligned", "Peaks", "Variants", "Logs"];
+const RESERVED_FILENAMES: [&'static str; 5]= ["README.md", "Snakefile", "cluster.yaml", "config.tsv", "setup.log"];
 
 #[derive(Debug)]
 struct SeqDir<'a> {
@@ -30,9 +29,10 @@ struct SeqDir<'a> {
 impl<'a> SeqDir<'a> {
     /// Construct a new SeqDir object from a path
     pub fn new(path: &'a Path) -> SeqDir<'a> {
+        let dir_regex: Regex = Regex::new(r"^([0-9]{2})(0?[1-9]|1[012])(0[1-9]|[12]\d|3[01])_(\w{3,})_(\d{4})_(A|B)(\w{9})(.*)?").unwrap();
         let dir_stem = path.file_stem().unwrap();
         // try extracting flowcell information from directory name
-        let dir_stem_capture_attempt = DIR_REGEX.captures(dir_stem.to_str().unwrap());
+        let dir_stem_capture_attempt = dir_regex.captures(dir_stem.to_str().unwrap());
         match dir_stem_capture_attempt {
             Some(cap) => {
                 // extract sequencing date
@@ -46,7 +46,7 @@ impl<'a> SeqDir<'a> {
                     "%y%m%d",
                 ).unwrap();
                 let instrument = cap.get(4).unwrap().as_str();
-                let run = cap.get(5).unwrap().as_str().parse::<u16>().unwrap();
+                let run = cap.get(5).unwrap().as_str().parse::<u8>().unwrap();
                 let pos = cap.get(6).unwrap().as_str().parse::<char>().unwrap();
                 let flowcell = cap.get(7).unwrap().as_str();
                 let description = cap.get(8).unwrap().as_str();
@@ -385,9 +385,9 @@ fn update_sample(s: &mut SeqSample, mate: String, lane: String) {
     }
 }
 
-fn create_config(seq: &SeqDir) {
+fn create_config(sd: &SeqDir) {
     // return if the config already exists
-    if seq.path.join(Path::new("config.tsv")).exists() {
+    if sd.path().join(Path::new("config.tsv")).exists() {
         return;
     }
     // sample name + optional sample index + optional lane + optional read mate/index number + optional _001 suffix
@@ -403,16 +403,17 @@ fn create_config(seq: &SeqDir) {
     let mut samples = HashMap::<String, SeqSample>::new();
     
     // walk over all HTS files in the folder
-    for hts in WalkDir::new(seq.path.join(Path::new("FASTQs")))
+    for hts in WalkDir::new(sd.path())
         .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.path().is_file())
-        .filter_map(|e| detect_filetype(e.path()))
+        .filter_map(|e| e.ok())                             // only consider correct entries
+        .filter(|e| e.path().is_file())                     // only consider files
+        .filter(|e| detect_filetype(e.path()).is_some())    // only consider HtsFiles
+        .map(|e| HtsFile::new(e.path()))                    // convert to HtsFile object
     {
         // don't move directories, only assess FASTQs
-        match hts_file.filetype() {
+        match hts.filetype() {
             Hts::FASTX(Fastx::FASTQ) => {
-                let fname = hts_file.path().file_name().unwrap().to_str().unwrap();
+                let fname = hts.path().file_name().unwrap().to_str().unwrap();
                 let cap = fq_regex.captures(fname);
                 // deal with the capture
                 match cap {
@@ -453,7 +454,7 @@ fn create_config(seq: &SeqDir) {
         }
     }
     // write sample information to config.tsv
-    let p = seq.path.join(Path::new("config.tsv"));
+    let p = sd.path().join(Path::new("config.tsv"));
     let mut file = match File::create(&p) {
         // The `description` method of `io::Error` returns a string that
         Err(why) => panic!("couldn't open {}: {}", p.display(), why.to_string()),
@@ -474,8 +475,8 @@ fn mv_to_dir(file: &Path, dir: &Path) {
     rename(file, dir.join(file.file_name().unwrap())).expect("Failed to move file.");
 }
 
-// 
 
+/// Organize a directory containing HTS data
 pub fn organize(indir: &Path, dryrun: bool, verbose: bool) {
     let sd = SeqDir::new(indir);
     sd.create_reserved_files(verbose, dryrun);
