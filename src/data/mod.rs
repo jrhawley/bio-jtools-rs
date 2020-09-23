@@ -218,13 +218,12 @@ impl fmt::Display for SeqSample {
 
 fn create_reserved_file(seq: &SeqDir, file: &str) {
     match file {
-        "README.md" => create_readme(seq),
+        "README.md"    => create_readme(seq),
         "cluster.yaml" => create_cluster_yaml(seq),
-        "Snakefile" => create_snakefile(seq),
+        "Snakefile"    => create_snakefile(seq),
         // exclude config.tsv, make that file separately when you reorganize the FASTQs
         _ => return,
     }
-    // OpenOptions::new().write(true).create_new(true).open(outfile).expect("Error creating file.");
 }
 
 fn create_reserved_dir(p: PathBuf) {
