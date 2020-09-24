@@ -16,23 +16,27 @@ const RESERVED_DIRNAMES: [&'static str; 7] = ["Reports", "FASTQs", "Trimmed", "A
 const RESERVED_FILENAMES: [&'static str; 5]= ["README.md", "Snakefile", "cluster.yaml", "config.tsv", "setup.log"];
 
 #[derive(Debug)]
-struct SeqDir<'a> {
-    path: &'a Path,
+struct SeqDir {
+    path: PathBuf,
     date: Date,
-    instrument: &'a str,
+    instrument: String,
     run: u8,
     position: char,
-    flowcell: &'a str,
-    description: &'a str,
+    flowcell: String,
+    description: String,
 }
 
-impl<'a> SeqDir<'a> {
+impl SeqDir {
     /// Construct a new SeqDir object from a path
-    pub fn new(path: &'a Path) -> SeqDir<'a> {
+    pub fn new(path: &Path) -> SeqDir {
         let dir_regex: Regex = Regex::new(r"^([0-9]{2})(0?[1-9]|1[012])(0[1-9]|[12]\d|3[01])_(\w{3,})_(\d{4})_(A|B)(\w{9})(.*)?").unwrap();
-        let dir_stem = path.file_stem().unwrap();
+        // if given a relative path, force it to an absolute path
+        let dir_stem = match path.is_relative() {
+            true => String::from(path.canonicalize().unwrap().file_stem().unwrap().to_str().unwrap()),
+            false => String::from(path.file_stem().unwrap().to_str().unwrap()),
+        };
         // try extracting flowcell information from directory name
-        let dir_stem_capture_attempt = dir_regex.captures(dir_stem.to_str().unwrap());
+        let dir_stem_capture_attempt = dir_regex.captures(&dir_stem);
         match dir_stem_capture_attempt {
             Some(cap) => {
                 // extract sequencing date
@@ -52,31 +56,31 @@ impl<'a> SeqDir<'a> {
                 let description = cap.get(8).unwrap().as_str();
                 
                 SeqDir {
-                    path: path,
+                    path: path.to_path_buf(),
                     date: date,
-                    instrument: instrument,
+                    instrument: String::from(instrument),
                     run: run,
                     position: pos,
-                    flowcell: flowcell,
-                    description: description,
+                    flowcell: String::from(flowcell),
+                    description: String::from(description),
                 }
             },
             // if no regex match, return the default SeqDir initialization
             None => SeqDir {
-                path: path,
+                path: path.to_path_buf(),
                 date: Local::today().naive_local(),
-                instrument: "",
+                instrument: String::from(""),
                 run: 0,
                 position: '?',
-                flowcell: "",
-                description: "",
+                flowcell: String::from(""),
+                description: String::from(""),
             }
         }
     }
 
     /// Path to SeqDir
     pub fn path(&self) -> &Path {
-        self.path
+        self.path.as_path()
     }
 
     /// Date of SeqDir creation
@@ -86,7 +90,7 @@ impl<'a> SeqDir<'a> {
 
     /// Sequencing instrument use to create SeqDir
     pub fn instrument(&self) -> &str {
-        self.instrument
+        &self.instrument
     }
 
     /// Run number of SeqDir run
@@ -101,12 +105,12 @@ impl<'a> SeqDir<'a> {
 
     /// Flowcell ID that generated the SeqDir
     pub fn flowcell(&self) -> &str {
-        self.flowcell
+        &self.flowcell
     }
 
     /// General description of the sequencing run
     pub fn description(&self) -> &str {
-        self.description
+        &self.description
     }
 
     /// Create the reserved files, if they are missing from the SeqDir
