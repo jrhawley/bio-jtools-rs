@@ -290,7 +290,7 @@ fn create_snakefile(seq: &SeqDir) {
         import os.path as path
 
         CONFIG = pd.read_csv('config.tsv', index_col=False, sep='\\t')
-        CONFIG = CONFIG.loc[~CONFIG.Sample.str.startswith('#'), :]
+        CONFIG = CONFIG.loc[CONFIG.Include == 'No', :]
 
         REPORT_DIR = 'Reports'
         FASTQ_DIR = 'FASTQs'
@@ -315,7 +315,7 @@ fn create_snakefile(seq: &SeqDir) {
             input:
                 path.join(REPORT_DIR, 'multiqc_report.html'),
                 expand(
-                    path.join(REPORT_DIR, '{{sample}}_L00{{lane}}_R{{read}}_fastqc.zip'),
+                    path.join(REPORT_DIR, '{sample}_L00{lane}_R{read}_fastqc.zip'),
                     sample=SAMPLES,
                     lane=LANES,
                     read=READS
@@ -325,7 +325,7 @@ fn create_snakefile(seq: &SeqDir) {
             output:
                 'rulegraph.png',
             shell:
-                'snakemake --rulegraph | dot -Tpng > {{output}}'
+                'snakemake --rulegraph | dot -Tpng > {output}'
 
         # =============================================================================
         # Rules
@@ -334,43 +334,43 @@ fn create_snakefile(seq: &SeqDir) {
         # -----------------------------------------------------------------------------
         rule fastqc:
             input:
-                path.join(FASTQ_DIR, '{{file}}.fastq.gz')
+                path.join(FASTQ_DIR, '{file}.fastq.gz')
             output:
-                path.join(REPORT_DIR, '{{file}}_fastqc.html'),
-                path.join(REPORT_DIR, '{{file}}_fastqc.zip')
+                path.join(REPORT_DIR, '{file}_fastqc.html'),
+                path.join(REPORT_DIR, '{file}_fastqc.zip')
             params:
-                '-o {{}}'.format(REPORT_DIR)
+                '-o {}'.format(REPORT_DIR)
             shell:
-                'fastqc {{params}} {{input}}'
+                'fastqc {params} {input}'
         rule multiqc:
             input:
                 samples = expand(
-                    path.join(REPORT_DIR, '{{sample}}_fastqc.zip'),
+                    path.join(REPORT_DIR, '{sample}_fastqc.zip'),
                     sample=SAMPLES
                 )
             output:
                 path.join(REPORT_DIR, 'multiqc_report.html')
             shell:
-                'multiqc -f -o {{REPORT_DIR}} {{REPORT_DIR}}'
+                'multiqc -f -o {REPORT_DIR} {REPORT_DIR}'
 
         # Miscellaneous
         # -----------------------------------------------------------------------------
         rule sort_bam_name:
             input:
-                '{{file}}.bam'
+                '{file}.bam'
             output:
-                '{{file}}.name-sorted.bam',
+                '{file}.name-sorted.bam',
             shell:
-                'sambamba sort -t 8 --tmpdir . -n -p -o {{output}} {{input}}'
+                'sambamba sort -t 8 --tmpdir . -n -p -o {output} {input}'
 
         rule sort_bam:
             input:
-                '{{file}}.bam'
+                '{file}.bam'
             output:
-                bam = '{{file}}.sorted.bam',
-                idx = '{{file}}.sorted.bam.bai'
+                bam = '{file}.sorted.bam',
+                idx = '{file}.sorted.bam.bai'
             shell:
-                'sambamba sort -t 8 --tmpdir . -p {{input}}'
+                'sambamba sort -t 8 --tmpdir . -p {input}'
         "
     );
     match file.write_all(text.as_bytes()) {
