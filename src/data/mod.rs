@@ -1,3 +1,4 @@
+use chrono::Local;
 use indoc::indoc;
 use regex::Regex;
 use std::collections::HashMap;
@@ -6,14 +7,21 @@ use std::fs::{create_dir, rename, File};
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
-use chrono::Local;
 
-use crate::utils::{Hts, HtsFile, Fastx, detect_filetype};
+use crate::utils::{detect_filetype, Fastx, Hts, HtsFile};
 
 type Date = chrono::NaiveDate;
 
-const RESERVED_DIRNAMES: [&'static str; 7] = ["Reports", "FASTQs", "Trimmed", "Aligned", "Peaks", "Variants", "Logs"];
-const RESERVED_FILENAMES: [&'static str; 5]= ["README.md", "Snakefile", "cluster.yaml", "config.tsv", "setup.log"];
+const RESERVED_DIRNAMES: [&'static str; 7] = [
+    "Reports", "FASTQs", "Trimmed", "Aligned", "Peaks", "Variants", "Logs",
+];
+const RESERVED_FILENAMES: [&'static str; 5] = [
+    "README.md",
+    "Snakefile",
+    "cluster.yaml",
+    "config.tsv",
+    "setup.log",
+];
 
 #[derive(Debug)]
 struct SeqDir {
@@ -29,10 +37,20 @@ struct SeqDir {
 impl SeqDir {
     /// Construct a new SeqDir object from a path
     pub fn new(path: &Path) -> SeqDir {
-        let dir_regex: Regex = Regex::new(r"^([0-9]{2})(0?[1-9]|1[012])(0[1-9]|[12]\d|3[01])_(\w{3,})_(\d{4})_(A|B)(\w{9})(.*)?").unwrap();
+        let dir_regex: Regex = Regex::new(
+            r"^([0-9]{2})(0?[1-9]|1[012])(0[1-9]|[12]\d|3[01])_(\w{3,})_(\d{4})_(A|B)(\w{9})(.*)?",
+        )
+        .unwrap();
         // if given a relative path, force it to an absolute path
         let dir_stem = match path.is_relative() {
-            true => String::from(path.canonicalize().unwrap().file_stem().unwrap().to_str().unwrap()),
+            true => String::from(
+                path.canonicalize()
+                    .unwrap()
+                    .file_stem()
+                    .unwrap()
+                    .to_str()
+                    .unwrap(),
+            ),
             false => String::from(path.file_stem().unwrap().to_str().unwrap()),
         };
         // try extracting flowcell information from directory name
@@ -48,13 +66,14 @@ impl SeqDir {
                         cap.get(3).unwrap().as_str()
                     ),
                     "%y%m%d",
-                ).unwrap();
+                )
+                .unwrap();
                 let instrument = cap.get(4).unwrap().as_str();
                 let run = cap.get(5).unwrap().as_str().parse::<u8>().unwrap();
                 let pos = cap.get(6).unwrap().as_str().parse::<char>().unwrap();
                 let flowcell = cap.get(7).unwrap().as_str();
                 let description = cap.get(8).unwrap().as_str();
-                
+
                 SeqDir {
                     path: path.to_path_buf(),
                     date: date,
@@ -64,7 +83,7 @@ impl SeqDir {
                     flowcell: String::from(flowcell),
                     description: String::from(description),
                 }
-            },
+            }
             // if no regex match, return the default SeqDir initialization
             None => SeqDir {
                 path: path.to_path_buf(),
@@ -74,7 +93,7 @@ impl SeqDir {
                 position: '?',
                 flowcell: String::from(""),
                 description: String::from(""),
-            }
+            },
         }
     }
 
@@ -158,30 +177,30 @@ impl SeqDir {
             println!("Moving sequencing files...");
         }
 
-
         // walk over all HTS files in the folder
         for hts in WalkDir::new(self.path())
             .into_iter()
-            .filter_map(|e| e.ok())                             // only consider correct entries
-            .filter(|e| e.path().is_file())                     // only consider files
-            .filter(|e| detect_filetype(e.path()).is_some())    // only consider HtsFiles
-            .map(|e| HtsFile::new(e.path()))                    // convert to HtsFile object
+            .filter_map(|e| e.ok()) // only consider correct entries
+            .filter(|e| e.path().is_file()) // only consider files
+            .filter(|e| detect_filetype(e.path()).is_some()) // only consider HtsFiles
+            .map(|e| HtsFile::new(e.path()))
+        // convert to HtsFile object
         {
             let destdir: PathBuf;
             // find out where the file needs to go
             match hts.filetype() {
-                Hts::FASTX(_) => {
+                Hts::Fastx(_) => {
                     destdir = self.path().join(Path::new("FASTQs"));
                 }
-                Hts::BAM | Hts::SAM | Hts::CRAM => {
+                Hts::Align(_) => {
                     destdir = self.path().join(Path::new("Aligned"));
                 }
-                Hts::BCF | Hts::VCF | Hts::MAF => {
+                Hts::Variant(_) => {
                     destdir = self.path().join(Path::new("Variants"));
-                },
+                }
                 Hts::Peak(_) => {
                     destdir = self.path().join(Path::new("Peaks"));
-                },
+                }
                 _ => {
                     destdir = self.path().join(Path::new("Reports"));
                 }
@@ -193,7 +212,10 @@ impl SeqDir {
                 println!(
                     "  {} -> {}",
                     hts.path().display(),
-                    destdir.as_path().join(hts.path().file_name().unwrap()).display()
+                    destdir
+                        .as_path()
+                        .join(hts.path().file_name().unwrap())
+                        .display()
                 );
             }
         }
@@ -222,9 +244,9 @@ impl fmt::Display for SeqSample {
 
 fn create_reserved_file(seq: &SeqDir, file: &str) {
     match file {
-        "README.md"    => create_readme(seq),
+        "README.md" => create_readme(seq),
         "cluster.yaml" => create_cluster_yaml(seq),
-        "Snakefile"    => create_snakefile(seq),
+        "Snakefile" => create_snakefile(seq),
         // exclude config.tsv, make that file separately when you reorganize the FASTQs
         _ => return,
     }
@@ -404,18 +426,19 @@ fn create_config(sd: &SeqDir, dryrun: bool) {
     )
     .unwrap();
     let mut samples = HashMap::<String, SeqSample>::new();
-    
+
     // walk over all HTS files in the folder
     for hts in WalkDir::new(sd.path())
         .into_iter()
-        .filter_map(|e| e.ok())                             // only consider correct entries
-        .filter(|e| e.path().is_file())                     // only consider files
-        .filter(|e| detect_filetype(e.path()).is_some())    // only consider HtsFiles
-        .map(|e| HtsFile::new(e.path()))                    // convert to HtsFile object
+        .filter_map(|e| e.ok()) // only consider correct entries
+        .filter(|e| e.path().is_file()) // only consider files
+        .filter(|e| detect_filetype(e.path()).is_some()) // only consider HtsFiles
+        .map(|e| HtsFile::new(e.path()))
+    // convert to HtsFile object
     {
         // don't move directories, only assess FASTQs
         match hts.filetype() {
-            Hts::FASTX(Fastx::FASTQ) => {
+            Hts::Fastx(Fastx::Fastq) => {
                 let fname = hts.path().file_name().unwrap().to_str().unwrap();
                 let cap = fq_regex.captures(fname);
                 // deal with the capture
@@ -449,11 +472,11 @@ fn create_config(sd: &SeqDir, dryrun: bool) {
                             };
                             samples.insert(sample, new_sample);
                         }
-                    },
+                    }
                     None => continue,
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
     // write sample information to config.tsv
@@ -480,14 +503,13 @@ fn mv_to_dir(file: &Path, dir: &Path) {
     rename(file, dir.join(file.file_name().unwrap())).expect("Failed to move file.");
 }
 
-
 /// Organize a directory containing HTS data
 pub fn organize(indir: &Path, dryrun: bool, verbose: bool) {
     let sd = SeqDir::new(indir);
     sd.create_reserved_files(verbose, dryrun);
     sd.create_reserved_dirs(verbose, dryrun);
     sd.relocate_hts_files(verbose, dryrun);
-    
+
     // extract sample information from FASTQs, reorganize
     if verbose {
         println!("Extracting sample information...");

@@ -1,38 +1,46 @@
-use std::path::{Path, PathBuf};
-use crate::fastx;
 use crate::align;
+use crate::fastx;
+use bam::{BamReader, BamWriter, RecordReader, RecordWriter, SamReader, SamWriter};
+use std::fs::File;
+use std::{
+    io::{BufReader, BufWriter},
+    path::{Path, PathBuf},
+};
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum Hts {
-    BAM,
-    SAM,
-    CRAM,
-    FASTX(Fastx),
-    BCF,
-    VCF,
-    MAF,
-    TABIX(Tabix),
-    BED(Bed),
+    Align(Align),
+    Fastx(Fastx),
+    Variant(Variant),
+    Tabix(Tabix),
+    Bed(Bed),
     Peak(Peak),
 }
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum Fastx {
-    FASTA,
-    FASTQ,
+    Fasta,
+    Fastq,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum Align {
+    Bam,
+    Cram,
+    Sam,
 }
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum Tabix {
     Tab,
-    GFF,
-    GTF,
+    Gff,
+    Gtf,
 }
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum Bed {
-    BED,
-    BEDPE,
+    Bed,
+    BedPE,
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -40,6 +48,13 @@ pub enum Peak {
     BroadPeak,
     GappedPeak,
     NarrowPeak,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum Variant {
+    Bcf,
+    Maf,
+    Vcf,
 }
 
 /// The structure to manage metadata for an HTS file
@@ -107,8 +122,53 @@ impl HtsFile {
     /// Print HTS file information
     pub fn print_info(&self) {
         match self.hts_type {
-            Hts::FASTX(_) => fastx::info(&self),
-            Hts::BAM | Hts::SAM => align::info(&self),
+            Hts::Fastx(_) => fastx::info(&self),
+            Hts::Align(Align::Bam) => {
+                let mut reader = BamReader::from_path(self.path(), 3).unwrap();
+                align::info(&mut reader)
+            }
+            Hts::Align(Align::Sam) => {
+                let mut reader = SamReader::from_path(self.path()).unwrap();
+                align::info(&mut reader)
+            }
+            _ => unimplemented!(),
+        }
+    }
+
+    /// Filter reads in an HTS file by their qname.
+    pub fn filter(&self, ids: &Path, out: &Path, keep: bool) {
+        // create new output HTS file
+        let out_hts = HtsFile::new(out);
+        // match on the combination of input/output files
+        match (self.filetype(), out_hts.filetype()) {
+            // BAM => BAM
+            (Hts::Align(Align::Bam), Hts::Align(Align::Bam)) => {
+                let mut reader = BamReader::from_path(self.path(), 3).unwrap();
+                let mut writer =
+                    BamWriter::from_path(self.path(), reader.header().clone()).unwrap();
+                align::filter(&mut reader, ids, &mut writer, keep)
+            }
+            // BAM => SAM
+            (Hts::Align(Align::Bam), Hts::Align(Align::Sam)) => {
+                let mut reader = BamReader::from_path(self.path(), 3).unwrap();
+                let mut writer =
+                    SamWriter::from_path(self.path(), reader.header().clone()).unwrap();
+                align::filter(&mut reader, ids, &mut writer, keep)
+            }
+            // SAM => BAM
+            (Hts::Align(Align::Sam), Hts::Align(Align::Bam)) => {
+                let mut reader = SamReader::from_path(self.path()).unwrap();
+                let mut writer =
+                    BamWriter::from_path(self.path(), reader.header().clone()).unwrap();
+                align::filter(&mut reader, ids, &mut writer, keep)
+            }
+            // SAM => SAM
+            (Hts::Align(Align::Sam), Hts::Align(Align::Sam)) => {
+                let mut reader = SamReader::from_path(self.path()).unwrap();
+                let mut writer =
+                    SamWriter::from_path(self.path(), reader.header().clone()).unwrap();
+                align::filter(&mut reader, ids, &mut writer, keep)
+            }
             _ => unimplemented!(),
         }
     }
@@ -120,11 +180,9 @@ fn file_is_zipped(path: &Path) -> bool {
         return false;
     }
     match path.extension() {
-        Some(ext) => {
-            match ext.to_str() {
-                Some("gz") | Some("bz2") => true,
-                _ => false,
-            }
+        Some(ext) => match ext.to_str() {
+            Some("gz") | Some("bz2") => true,
+            _ => false,
         },
         None => false,
     }
@@ -143,26 +201,24 @@ pub fn detect_filetype(path: &Path) -> Option<Hts> {
     }
 
     match stem.extension() {
-        Some(ext) => {
-            match ext.to_str() {
-                Some("bam")                => Some(Hts::BAM),
-                Some("sam")                => Some(Hts::SAM),
-                Some("cram")               => Some(Hts::CRAM),
-                Some("fasta") | Some("fa") => Some(Hts::FASTX(Fastx::FASTA)),
-                Some("fastq") | Some("fq") => Some(Hts::FASTX(Fastx::FASTQ)),
-                Some("bcf")                => Some(Hts::BCF),
-                Some("vcf")                => Some(Hts::VCF),
-                Some("maf")                => Some(Hts::MAF),
-                Some("tbx")                => Some(Hts::TABIX(Tabix::Tab)),
-                Some("gff")                => Some(Hts::TABIX(Tabix::GFF)),
-                Some("gtf")                => Some(Hts::TABIX(Tabix::GTF)),
-                Some("bed")                => Some(Hts::BED(Bed::BED)),
-                Some("bedpe")              => Some(Hts::BED(Bed::BEDPE)),
-                Some("narrowPeak")         => Some(Hts::Peak(Peak::NarrowPeak)),
-                Some("broadPeak")          => Some(Hts::Peak(Peak::BroadPeak)),
-                Some("gappedPeak")         => Some(Hts::Peak(Peak::GappedPeak)),
-                _ => None,
-            }
+        Some(ext) => match ext.to_str() {
+            Some("bam") => Some(Hts::Align(Align::Bam)),
+            Some("sam") => Some(Hts::Align(Align::Sam)),
+            Some("cram") => Some(Hts::Align(Align::Cram)),
+            Some("fasta") | Some("fa") => Some(Hts::Fastx(Fastx::Fasta)),
+            Some("fastq") | Some("fq") => Some(Hts::Fastx(Fastx::Fastq)),
+            Some("bcf") => Some(Hts::Variant(Variant::Bcf)),
+            Some("vcf") => Some(Hts::Variant(Variant::Vcf)),
+            Some("maf") => Some(Hts::Variant(Variant::Maf)),
+            Some("tbx") => Some(Hts::Tabix(Tabix::Tab)),
+            Some("gff") => Some(Hts::Tabix(Tabix::Gff)),
+            Some("gtf") => Some(Hts::Tabix(Tabix::Gtf)),
+            Some("bed") => Some(Hts::Bed(Bed::Bed)),
+            Some("bedpe") => Some(Hts::Bed(Bed::BedPE)),
+            Some("narrowPeak") => Some(Hts::Peak(Peak::NarrowPeak)),
+            Some("broadPeak") => Some(Hts::Peak(Peak::BroadPeak)),
+            Some("gappedPeak") => Some(Hts::Peak(Peak::GappedPeak)),
+            _ => None,
         },
         None => None,
     }
