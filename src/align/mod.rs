@@ -1,4 +1,4 @@
-use bam::{RecordReader, RecordWriter};
+use bam::{Record, RecordReader, RecordWriter};
 use prettytable::{cell, format, row, Table};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
@@ -51,7 +51,6 @@ pub fn filter<T: RecordReader, S: RecordWriter>(
     writer: &mut S,
     keep: bool,
 ) {
-    let reader_iter = reader.into_iter();
     // open IDs to filter
     let mut id_file = match File::open(ids) {
         Ok(f) => BufReader::new(f).lines(),
@@ -65,53 +64,53 @@ pub fn filter<T: RecordReader, S: RecordWriter>(
         None => panic!("No IDs in ID file {}. No need to filter", ids.display()),
     };
     let mut cur_id = prev_id.clone();
-    // name of the first read in the SAM/BAM file
-    let mut prev_read = match reader_iter.next() {
-        Some(Ok(read)) => read,
-        Some(Err(_)) => panic!("Error parsing first read in HTS file"),
-        None => panic!("No reads in HTS file"),
+
+    // name of the first record in the SAM/BAM file
+    let mut prev_record = Record::new();
+    match reader.read_into(&mut prev_record) {
+        // no problem if reading the first read
+        Ok(true) => {}
+        Ok(false) => panic!("No reads in HTS file"),
+        Err(_) => panic!("Error parsing first read in HTS file"),
     };
-    let mut prev_read_name = from_utf8(prev_read.name()).unwrap().to_lowercase();
-    let mut cur_read = prev_read;
-    let mut cur_read_name = from_utf8(cur_read.name()).unwrap().to_lowercase();
+    let mut prev_record_name = from_utf8(&prev_record.name()).unwrap().to_lowercase();
+    let mut cur_record = prev_record.clone();
+    let mut cur_record_name = prev_record_name.clone();
 
     let mut deal_with_remaining_reads = false;
 
-    // step through reads and IDs
+    // step through recordsand IDs
     loop {
         // panic if IDs aren't sorted
         if &cur_id < &prev_id {
             panic!("IDs aren't sorted. Please sort with `sort ids.in > ids.filtered.out`")
         }
         // panic if SAM/BAM isn't name-sorted
-        if &cur_read_name < &prev_read_name {
+        if &cur_record_name < &prev_record_name {
             panic!("HTS file isn't sorted. Please sort with `samtools sort -n`")
         }
 
-        // decide what to do with cur_read, depending on how it relates to cur_id
-        // write or discard read if the IDs are ahead of the reads
-        if &cur_read_name < &cur_id {
-            // look for next read
-            match reader_iter.next() {
-                // update the reads if there is a subsequent read in the SAM/BAM
-                Some(Ok(read)) => {
-                    if !keep {
-                        writer.write(&cur_read).unwrap();
-                    }
-                    prev_read = cur_read;
-                    prev_read_name = cur_read_name;
-                    cur_read = read;
-                    cur_read_name = from_utf8(cur_read.name()).unwrap().to_lowercase();
-                }
-                Some(Err(_)) => panic!("Error parsing record in HTS file"),
-                // if no more reads in SAM/BAM, close the writer and exit the loop
-                None => {
+        // decide what to do with cur_record, depending on how it relates to cur_id
+        // write or discard record if the IDs are ahead of the reads
+        if &cur_record_name < &cur_id {
+            if !keep {
+                writer.write(&cur_record).unwrap();
+            }
+            // update the records
+            prev_record_name = cur_record_name;
+            // check if there is a subsequent record in the SAM/BAM
+            match reader.read_into(&mut cur_record) {
+                Ok(true) => {}
+                // if no more records in SAM/BAM, close the writer and exit the loop
+                Ok(false) => {
                     writer.finish().unwrap();
                     break;
                 }
-            };
-        // update the IDs to catch up to the reads
-        } else if cur_read_name > cur_id {
+                Err(_) => panic!("Error parsing record in HTS file"),
+            }
+            cur_record_name = from_utf8(&cur_record.name()).unwrap().to_lowercase();
+        // update the IDs to catch up to the records
+        } else if cur_record_name > cur_id {
             match id_file.next() {
                 // update the IDs
                 Some(Ok(id)) => {
@@ -126,33 +125,31 @@ pub fn filter<T: RecordReader, S: RecordWriter>(
                 }
             };
         } else {
-            // don't purge this ID yet, just move onto the next read
-            // there may be other alignments that match this ID (e.g. mate or non-unique alignment)
-            match reader_iter.next() {
-                // update the reads if there is a subsequent read in the SAM/BAM
-                Some(Ok(read)) => {
-                    if keep {
-                        writer.write(&cur_read).unwrap();
-                    }
-                    prev_read = cur_read;
-                    prev_read_name = cur_read_name;
-                    cur_read = read;
-                    cur_read_name = from_utf8(cur_read.name()).unwrap().to_lowercase();
+            // don't purge this ID yet, just move onto the next record
+            // there may be other records that match this ID (e.g. mate or non-unique alignment)
+            if keep {
+                writer.write(&cur_record).unwrap();
+            }
+            prev_record_name = cur_record_name;
+            match reader.read_into(&mut cur_record) {
+                // if there is a subsequent records in the SAM/BAM
+                Ok(true) => {
+                    cur_record_name = from_utf8(&cur_record.name()).unwrap().to_lowercase();
                 }
-                Some(Err(_)) => panic!("Error parsing record in HTS file"),
                 // if no more reads in SAM/BAM, close the writer and exit the loop
-                None => {
+                Ok(false) => {
                     writer.finish().unwrap();
                     break;
                 }
+                Err(_) => panic!("Error parsing record in HTS file"),
             }
         }
     }
 
-    // if all of the IDs have been exhausted but we still have reads to write
+    // if all of the IDs have been exhausted but we still have records to write
     // write them without comparing against IDs
     if deal_with_remaining_reads && !keep {
-        for read in reader_iter {
+        for read in reader {
             let record = read.unwrap();
             writer.write(&record).unwrap();
         }
