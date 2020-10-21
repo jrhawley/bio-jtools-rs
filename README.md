@@ -11,6 +11,10 @@ A suite of bioinformatics tools for interacting with high throughput sequencing 
 Extract and print metadata about an HTS file.
 For FASTQs, this includes number of bases, number of records, and all the instruments the records come from.
 
+### filter
+
+Filter reads in an HTS file by their qname.
+
 ### jaccard
 
 Calculate the Jaccard index for each pair in a set of BED files.
