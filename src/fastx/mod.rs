@@ -14,7 +14,7 @@ pub fn info(hts: &HtsFile) {
     let mut instruments: HashSet<String> = HashSet::new(); // sequencing instrument IDs
 
     // parse the FASTQ
-    let reader = parse_fastx_file(hts.path()).expect("Error opening HTS file");
+    let mut reader = parse_fastx_file(hts.path()).expect("Error opening HTS file");
     while let Some(record) = reader.next() {
         let seq = record.expect("invalid record");
         // add to n_records count
