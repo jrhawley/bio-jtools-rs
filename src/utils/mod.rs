@@ -137,33 +137,31 @@ impl HtsFile {
 
     /// Filter reads in an HTS file by their qname.
     pub fn filter(&self, ids: &Path, out: &Path, keep: bool) {
-        // create new output HTS file
-        let out_hts = HtsFile::new(out);
         // match on the combination of input/output files
-        match (self.filetype(), out_hts.filetype()) {
+        match (self.filetype(), detect_filetype(out)) {
             // BAM => BAM
-            (Hts::Align(Align::Bam), Hts::Align(Align::Bam)) => {
+            (Hts::Align(Align::Bam), Some(Hts::Align(Align::Bam))) => {
                 let mut reader = BamReader::from_path(self.path(), 3).unwrap();
                 let mut writer =
                     BamWriter::from_path(self.path(), reader.header().clone()).unwrap();
                 align::filter(&mut reader, ids, &mut writer, keep)
             }
             // BAM => SAM
-            (Hts::Align(Align::Bam), Hts::Align(Align::Sam)) => {
+            (Hts::Align(Align::Bam), Some(Hts::Align(Align::Sam))) => {
                 let mut reader = BamReader::from_path(self.path(), 3).unwrap();
                 let mut writer =
                     SamWriter::from_path(self.path(), reader.header().clone()).unwrap();
                 align::filter(&mut reader, ids, &mut writer, keep)
             }
             // SAM => BAM
-            (Hts::Align(Align::Sam), Hts::Align(Align::Bam)) => {
+            (Hts::Align(Align::Sam), Some(Hts::Align(Align::Bam))) => {
                 let mut reader = SamReader::from_path(self.path()).unwrap();
                 let mut writer =
                     BamWriter::from_path(self.path(), reader.header().clone()).unwrap();
                 align::filter(&mut reader, ids, &mut writer, keep)
             }
             // SAM => SAM
-            (Hts::Align(Align::Sam), Hts::Align(Align::Sam)) => {
+            (Hts::Align(Align::Sam), Some(Hts::Align(Align::Sam))) => {
                 let mut reader = SamReader::from_path(self.path()).unwrap();
                 let mut writer =
                     SamWriter::from_path(self.path(), reader.header().clone()).unwrap();
@@ -189,9 +187,6 @@ fn file_is_zipped(path: &Path) -> bool {
 }
 
 pub fn detect_filetype(path: &Path) -> Option<Hts> {
-    if !path.exists() {
-        return None;
-    }
     let stem: &Path;
     // strip zipped extension if it's a zipped file
     if file_is_zipped(path) {
