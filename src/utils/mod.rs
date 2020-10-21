@@ -1,11 +1,7 @@
 use crate::align;
 use crate::fastx;
-use bam::{BamReader, BamWriter, RecordReader, RecordWriter, SamReader, SamWriter};
-use std::fs::File;
-use std::{
-    io::{BufReader, BufWriter},
-    path::{Path, PathBuf},
-};
+use bam::{BamReader, BamWriter, SamReader, SamWriter};
+use std::path::{Path, PathBuf};
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum Hts {
@@ -61,7 +57,6 @@ pub enum Variant {
 pub struct HtsFile {
     path: PathBuf,
     hts_type: Hts,
-    zipped: bool,
 }
 
 const SUPPORTED_EXTENSIONS: [&'static str; 18] = [
@@ -100,15 +95,10 @@ impl HtsFile {
             HtsFile {
                 path: path.to_path_buf(),
                 hts_type: hts_type,
-                zipped: file_is_zipped(path),
             }
         } else {
             panic!(format!("Could not parse HTS file type from path. Supported file extensions are (excluding compression): {:?}", SUPPORTED_EXTENSIONS));
         }
-    }
-    /// Determine if the HTS file is compressed or not
-    pub fn is_zipped(&self) -> bool {
-        self.zipped
     }
     /// HTS file path
     pub fn path(&self) -> &Path {
