@@ -120,6 +120,8 @@ pub fn filter<T: RecordReader, S: RecordWriter>(
                 Some(Err(_)) => panic!("Error parsing ID in ID file {}.", ids.display()),
                 // if no more IDs, close this reader and deal with the remaining reads outside the loop
                 None => {
+                    // write the current read, if required, then deal with all the future ones
+                    writer.write(&cur_record).unwrap();
                     deal_with_remaining_reads = true;
                     break;
                 }
