@@ -142,29 +142,25 @@ impl HtsFile {
             // BAM => BAM
             (Hts::Align(Align::Bam), Some(Hts::Align(Align::Bam))) => {
                 let mut reader = BamReader::from_path(self.path(), 3).unwrap();
-                let mut writer =
-                    BamWriter::from_path(self.path(), reader.header().clone()).unwrap();
+                let mut writer = BamWriter::from_path(out, reader.header().clone()).unwrap();
                 align::filter(&mut reader, ids, &mut writer, keep)
             }
             // BAM => SAM
             (Hts::Align(Align::Bam), Some(Hts::Align(Align::Sam))) => {
                 let mut reader = BamReader::from_path(self.path(), 3).unwrap();
-                let mut writer =
-                    SamWriter::from_path(self.path(), reader.header().clone()).unwrap();
+                let mut writer = SamWriter::from_path(out, reader.header().clone()).unwrap();
                 align::filter(&mut reader, ids, &mut writer, keep)
             }
             // SAM => BAM
             (Hts::Align(Align::Sam), Some(Hts::Align(Align::Bam))) => {
                 let mut reader = SamReader::from_path(self.path()).unwrap();
-                let mut writer =
-                    BamWriter::from_path(self.path(), reader.header().clone()).unwrap();
+                let mut writer = BamWriter::from_path(out, reader.header().clone()).unwrap();
                 align::filter(&mut reader, ids, &mut writer, keep)
             }
             // SAM => SAM
             (Hts::Align(Align::Sam), Some(Hts::Align(Align::Sam))) => {
                 let mut reader = SamReader::from_path(self.path()).unwrap();
-                let mut writer =
-                    SamWriter::from_path(self.path(), reader.header().clone()).unwrap();
+                let mut writer = SamWriter::from_path(out, reader.header().clone()).unwrap();
                 align::filter(&mut reader, ids, &mut writer, keep)
             }
             _ => unimplemented!(),
