@@ -96,7 +96,7 @@ pub fn filter<T: RecordReader, S: RecordWriter>(
                 // update the reads if there is a subsequent read in the SAM/BAM
                 Some(Ok(read)) => {
                     if !keep {
-                        writer.write(&cur_read).unwrap_err();
+                        writer.write(&cur_read).unwrap();
                     }
                     prev_read = cur_read;
                     prev_read_name = cur_read_name;
@@ -106,7 +106,7 @@ pub fn filter<T: RecordReader, S: RecordWriter>(
                 Some(Err(_)) => panic!("Error parsing record in HTS file"),
                 // if no more reads in SAM/BAM, close the writer and exit the loop
                 None => {
-                    writer.finish().unwrap_err();
+                    writer.finish().unwrap();
                     break;
                 }
             };
@@ -132,7 +132,7 @@ pub fn filter<T: RecordReader, S: RecordWriter>(
                 // update the reads if there is a subsequent read in the SAM/BAM
                 Some(Ok(read)) => {
                     if keep {
-                        writer.write(&cur_read).unwrap_err();
+                        writer.write(&cur_read).unwrap();
                     }
                     prev_read = cur_read;
                     prev_read_name = cur_read_name;
@@ -142,7 +142,7 @@ pub fn filter<T: RecordReader, S: RecordWriter>(
                 Some(Err(_)) => panic!("Error parsing record in HTS file"),
                 // if no more reads in SAM/BAM, close the writer and exit the loop
                 None => {
-                    writer.finish().unwrap_err();
+                    writer.finish().unwrap();
                     break;
                 }
             }
@@ -154,8 +154,8 @@ pub fn filter<T: RecordReader, S: RecordWriter>(
     if deal_with_remaining_reads && !keep {
         for read in reader_iter {
             let record = read.unwrap();
-            writer.write(&record).unwrap_err();
+            writer.write(&record).unwrap();
         }
-        writer.finish().unwrap_err();
+        writer.finish().unwrap();
     }
 }
