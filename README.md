@@ -13,7 +13,8 @@ For FASTQs, this includes number of bases, number of records, and all the instru
 
 ### filter
 
-Filter reads in an HTS file by their qname.
+Filter an HTS file by its query names.
+Currently only implemented for SAM/BAM files
 
 ### jaccard
 
@@ -58,5 +59,4 @@ Times are listed +/- standard deviation, using `hyperfine --warmup 2`.
 
 ### filter
 
-Filter an HTS file by its query names.
-**Not currently implemented**.
+Filtering FASTX files.
