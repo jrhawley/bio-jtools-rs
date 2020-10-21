@@ -2,9 +2,9 @@ use clap::{value_t, values_t, App, Arg, SubCommand};
 use std::fs::File;
 use std::path::Path;
 
+mod align;
 mod data;
 mod fastx;
-mod align;
 mod interval;
 mod utils;
 
@@ -50,28 +50,33 @@ fn main() {
                         .required(true),
                 ),
         )
-        // .subcommand(
-        //     SubCommand::with_name("filter")
-        //         .about("Filter an HTS file by its query names")
-        //         .arg(
-        //             Arg::with_name("hts")
-        //                 .help("A name-sorted HTS file to filter")
-        //                 .required(true),
-        //         )
-        //         .arg(
-        //             Arg::with_name("ids")
-        //                 .help("Text file containing query name IDs to be removed")
-        //                 .required(true),
-        //         )
-        //         .arg(
-        //             Arg::with_name("keep")
-        //                 .short("k")
-        //                 .long("keep")
-        //                 .help("Keep only these IDs, instead of the default which removes them")
-        //                 .required(false),
-        //         )
-        //         .arg(Arg::with_name("output").help("Output file. If not given, print to STDOUT")),
-        // )
+        .subcommand(
+            SubCommand::with_name("filter")
+                .about("Filter an HTS file by its query names")
+                .arg(
+                    Arg::with_name("hts")
+                        .help("A name-sorted HTS file to filter")
+                        .required(true),
+                )
+                .arg(
+                    Arg::with_name("ids")
+                        .help("Text file containing query name IDs to be removed")
+                        .required(true),
+                )
+                .arg(
+                    Arg::with_name("keep")
+                        .short("k")
+                        .long("keep")
+                        .help("Keep only these IDs, instead of the default which removes them")
+                        .default_value("false")
+                        .required(false),
+                )
+                .arg(
+                    Arg::with_name("output")
+                        .help("Filtered output file")
+                        .required(true),
+                ),
+        )
         .subcommand(
             SubCommand::with_name("org")
                 .about("Organize a batch of raw sequencing data")
@@ -150,5 +155,17 @@ fn main() {
         } else {
             organize(indir, dryrun, verbose);
         }
+    } else if let Some(_o) = _matches.subcommand_matches("filter") {
+        let hts = value_t!(_o.value_of("hts"), String).unwrap_or_else(|e| e.exit());
+        let ids = value_t!(_o.value_of("ids"), String).unwrap_or_else(|e| e.exit());
+        let output = value_t!(_o.value_of("output"), String).unwrap_or_else(|e| e.exit());
+        let keep = value_t!(_o.value_of("keep"), bool).unwrap_or_else(|e| e.exit());
+
+        let hts_path = Path::new(&hts);
+        let ids_path = Path::new(&ids);
+        let out_path = Path::new(&output);
+
+        let hts_file = HtsFile::new(&hts_path);
+        hts_file.filter(ids_path, out_path, keep);
     }
 }

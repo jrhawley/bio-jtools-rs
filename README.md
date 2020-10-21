@@ -11,6 +11,11 @@ A suite of bioinformatics tools for interacting with high throughput sequencing 
 Extract and print metadata about an HTS file.
 For FASTQs, this includes number of bases, number of records, and all the instruments the records come from.
 
+### filter
+
+Filter an HTS file by its query names.
+Currently only implemented for SAM/BAM files
+
 ### jaccard
 
 Calculate the Jaccard index for each pair in a set of BED files.
@@ -54,5 +59,4 @@ Times are listed +/- standard deviation, using `hyperfine --warmup 2`.
 
 ### filter
 
-Filter an HTS file by its query names.
-**Not currently implemented**.
+Filtering FASTX files.

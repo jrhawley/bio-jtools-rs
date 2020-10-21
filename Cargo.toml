@@ -1,6 +1,6 @@
 [package]
 name = "bio-jtools"
-version = "2020.9.22"
+version = "0.1.5"
 authors = ["James Hawley <jamesrichardhawley@gmail.com>"]
 edition = "2018"
 description = "A suite of bioinformatics tools for interacting with high throughput sequencing (HTS) data"
@@ -17,8 +17,7 @@ include = [
 ]
 
 [dependencies]
-bio = "0.30.0"
-needletail = "0.3.2"
+needletail = { version = "0.4", features = ["compression"] }
 rust-lapper = "0.4.4"
 chrono = "0.4.11"
 regex = "1.3.9"
@@ -26,7 +25,6 @@ walkdir = "2.3.1"
 prettytable-rs = "0.8.0"
 itertools = "0.9"
 indoc = "0.3"
-# rust-htslib = {path = "../rust-htslib"}
 bam = "0.1.1"
 
 [dependencies.clap]
