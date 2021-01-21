@@ -1,6 +1,6 @@
 [package]
 name = "bio-jtools"
-version = "2020.10.21"
+version = "2021.1.21"
 authors = ["James Hawley <jamesrichardhawley@gmail.com>"]
 edition = "2018"
 description = "A suite of bioinformatics tools for interacting with high throughput sequencing (HTS) data"
