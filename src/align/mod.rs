@@ -4,6 +4,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::str::from_utf8;
+use std::collections::HashSet;
 
 /// Print information about the alignment file
 pub fn info<T: RecordReader>(reader: &mut T) {
