@@ -44,16 +44,16 @@ YYMMDD_INSTID_RUN_FCID/
 
 ## Benchmarking
 
-Benchmarks on run in a Windows 10 computer, Intel i5 750 @ 2.67 GHz processor with 12 GB of RAM.
-Times are listed +/- standard deviation, using `hyperfine --warmup 2`.
+Benchmarks on run in a Windows 10 computer, Intel i7 960 @ 3.2 GHz processor with 12 GB DDR3 of RAM.
+Times are listed +/- standard deviation, using `hyperfine --warmup 3`.
 
 ### info
 
-| File                                                                                             | # Reads   | t<sub>gzip</sub>     | t<sub>plain</sub>  |
-| ------------------------------------------------------------------------------------------------ | --------- | -------------------- | ------------------ |
-| [`examples/SRR0000001.fastq`](examples/)                                                         | 2 500     | 17.0 ms +/- 0.9 ms   | 12.8 ms +/- 1.0 ms |
-| [`examples/SRR0000002.fastq`](examples/)                                                         | 25 000    | 78.4 ms +/- 3.3 ms   | 16.6 ms +/- 0.6 ms |
-| [`M_abscessus_HiSeq.fq`](https://lh3.github.io/2020/05/17/fast-high-level-programming-languages) | 5 682 010 | 12.323 s +/- 0.227 s | 951.5 ms + 5.6 ms  |
+| File                                                                                             | # Reads   | t<sub>gzip</sub>    | t<sub>plain</sub>   |
+| ------------------------------------------------------------------------------------------------ | --------- | ------------------- | ------------------- |
+| [`examples/SRR0000001.fastq`](examples/)                                                         | 2 500     | 33.5 ms +/- 16.1 ms | 29.6 ms +/- 14.2 ms |
+| [`examples/SRR0000002.fastq`](examples/)                                                         | 25 000    | 99.6 ms +/- 20.5 ms | 46.1 ms +/- 17.8 ms |
+| [`M_abscessus_HiSeq.fq`](https://lh3.github.io/2020/05/17/fast-high-level-programming-languages) | 5 682 010 | 9.710 s +/- 0.070 s | 2.039 s +/- 0.202 s |
 
 ## Roadmap
 
