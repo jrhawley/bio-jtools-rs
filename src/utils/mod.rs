@@ -110,9 +110,9 @@ impl HtsFile {
     }
 
     /// Print HTS file information
-    pub fn print_info(&self) {
+    pub fn print_info(&self, count_lengths: bool) {
         match self.hts_type {
-            Hts::Fastx(_) => fastx::info(&self),
+            Hts::Fastx(_) => fastx::info(&self, count_lengths),
             Hts::Align(Align::Bam) => {
                 let mut reader = BamReader::from_path(self.path(), 3).unwrap();
                 align::info(&mut reader)
