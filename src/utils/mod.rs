@@ -115,11 +115,11 @@ impl HtsFile {
             Hts::Fastx(_) => fastx::info(&self, count_lengths),
             Hts::Align(Align::Bam) => {
                 let mut reader = BamReader::from_path(self.path(), 3).unwrap();
-                align::info(&mut reader)
+                align::info(&mut reader, count_lengths)
             }
             Hts::Align(Align::Sam) => {
                 let mut reader = SamReader::from_path(self.path()).unwrap();
-                align::info(&mut reader)
+                align::info(&mut reader, count_lengths)
             }
             _ => unimplemented!(),
         }

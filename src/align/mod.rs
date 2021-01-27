@@ -1,20 +1,46 @@
 use bam::{Record, RecordReader, RecordWriter};
 use prettytable::{cell, format, row, Table};
+use std::collections::{BTreeMap, HashSet};
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::str::from_utf8;
-use std::collections::HashSet;
 
-/// Print information about the alignment file
-pub fn info<T: RecordReader>(reader: &mut T) {
+/// Helper function for the most efficient looping over the Fastx file
+fn count_info<T: RecordReader>(reader: &mut T) -> BTreeMap<String, String> {
+    // values to keep and display
+    let mut n_records: u32 = 0; // number of records
+    let mut n_bases: u32 = 0; // number of bases
+    let mut n_errs: u32 = 0; // number of alignments resulting in parse errors
+
+    for record in reader {
+        match record {
+            Ok(rec) => {
+                // add to n_records count
+                n_records += 1;
+                // keep track of the n_records number of bases
+                let seq_length = rec.sequence().len() as u32;
+                n_bases += seq_length;
+            }
+            Err(_) => n_errs += 1,
+        }
+    }
+
+    let mut res: BTreeMap<String, String> = BTreeMap::new();
+    res.insert("Records".to_string(), n_records.to_string());
+    res.insert("Total Bases".to_string(), n_bases.to_string());
+    res.insert("Errors".to_string(), n_errs.to_string());
+    res
+}
+
+/// Helper function for the most efficient looping over the Fastx file
+fn count_info_lengths<T: RecordReader>(reader: &mut T) -> BTreeMap<String, String> {
     // values to keep and display
     let mut n_records: u32 = 0; // number of records
     let mut n_bases: u32 = 0; // number of bases
     let mut n_errs: u32 = 0; // number of alignments resulting in parse errors
     let mut record_lens: HashSet<u32> = HashSet::new(); // read lengths
 
-    // parse the alignment file
     for record in reader {
         match record {
             Ok(rec) => {
@@ -32,6 +58,11 @@ pub fn info<T: RecordReader>(reader: &mut T) {
         }
     }
 
+    let mut res: BTreeMap<String, String> = BTreeMap::new();
+    res.insert("Records".to_string(), n_records.to_string());
+    res.insert("Total Bases".to_string(), n_bases.to_string());
+    res.insert("Errors".to_string(), n_errs.to_string());
+
     // format a string of all the record lengths
     let lengths = record_lens
         .iter()
@@ -41,16 +72,25 @@ pub fn info<T: RecordReader>(reader: &mut T) {
     for l in &lengths[1..] {
         len_str.push_str(format!(", {}", &l).as_str());
     }
+    res.insert("Record Lengths".to_string(), len_str);
+    res
+}
+
+/// Print information about the alignment file
+pub fn info<T: RecordReader>(reader: &mut T, count_lengths: bool) {
+    // parse the alignment file
+    let res = match count_lengths {
+        false => count_info(reader),
+        true => count_info_lengths(reader),
+    };
 
     // construct a table for display
     let mut tab = Table::new();
     tab.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
     tab.set_titles(row!["Statistic", "Value"]);
-
-    tab.add_row(row!["Records", n_records]);
-    tab.add_row(row!["Record Lengths", len_str]);
-    tab.add_row(row!["Total Bases", n_bases]);
-    tab.add_row(row!["Errors", n_errs]);
+    for (k, v) in &res {
+        tab.add_row(row![k, v]);
+    }
 
     // print to STDOUT
     tab.printstd();
