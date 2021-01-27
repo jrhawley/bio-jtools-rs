@@ -51,9 +51,9 @@ Times are listed +/- standard deviation, using `hyperfine --warmup 3`.
 
 | File                                                                                             | # Reads   | t<sub>gzip</sub>    | t<sub>plain</sub>   |
 | ------------------------------------------------------------------------------------------------ | --------- | ------------------- | ------------------- |
-| [`examples/SRR0000001.fastq`](examples/)                                                         | 2 500     | 33.5 ms +/- 16.1 ms | 29.6 ms +/- 14.2 ms |
-| [`examples/SRR0000002.fastq`](examples/)                                                         | 25 000    | 99.6 ms +/- 20.5 ms | 46.1 ms +/- 17.8 ms |
-| [`M_abscessus_HiSeq.fq`](https://lh3.github.io/2020/05/17/fast-high-level-programming-languages) | 5 682 010 | 9.710 s +/- 0.070 s | 2.039 s +/- 0.202 s |
+| [`examples/SRR0000001.fastq`](examples/)                                                         | 2 500     | 26.2 ms +/- 1.8 ms  | 22.8 ms +/- 3.2 ms  |
+| [`examples/SRR0000002.fastq`](examples/)                                                         | 25 000    | 73.0 ms +/- 7.0 ms  | 27.5 ms +/- 3.2 ms  |
+| [`M_abscessus_HiSeq.fq`](https://lh3.github.io/2020/05/17/fast-high-level-programming-languages) | 5 682 010 | 8.701 s +/- 0.291 s | 1.026 s +/- 0.011 s |
 
 ## Roadmap
 
