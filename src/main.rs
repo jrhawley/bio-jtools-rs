@@ -15,6 +15,9 @@ fn main() {
     let _matches = App::new(env!("CARGO_PKG_NAME"))
         .version(env!("CARGO_PKG_VERSION"))
         .about(env!("CARGO_PKG_DESCRIPTION"))
+        .setting(clap::AppSettings::ColorAuto)
+        .setting(clap::AppSettings::ColoredHelp)
+        .setting(clap::AppSettings::ArgRequiredElseHelp)
         .subcommand(
             SubCommand::with_name("jaccard")
                 .about("Calculate the Jaccard index for each pair in a set of BED files")
