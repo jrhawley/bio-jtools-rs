@@ -1,5 +1,8 @@
+//! # Processing BED and other interval-based files
+//! Functions and methods related to processing files based on genomic intervals, such as [BED](https://bedtools.readthedocs.io/en/latest/content/general-usage.html) files and its variants.
+
 use itertools::Itertools;
-use prettytable::{Cell, Row, Table, format};
+use prettytable::{format, Cell, Row, Table};
 use rust_lapper::{Interval, Lapper};
 use std::collections::HashMap;
 use std::fs::File;

@@ -1,3 +1,7 @@
+//! # bio-jtools
+//!
+//! A collection of utilities for handling batches of DNA sequencing files.
+
 use clap::{value_t, values_t, App, Arg, SubCommand};
 use std::fs::File;
 use std::path::Path;

@@ -1,3 +1,6 @@
+//! # Utilities and helper functions
+//! Various helper functions used throughout the `bio-jtools` crate
+
 use crate::align;
 use crate::fastx;
 use bam::{BamReader, BamWriter, SamReader, SamWriter};
@@ -153,6 +156,7 @@ impl HtsFile {
                 let mut writer = SamWriter::from_path(out, reader.header().clone()).unwrap();
                 align::filter(&mut reader, ids, &mut writer, keep)
             }
+            (Hts::Fastx(_), Some(Hts::Fastx(_))) => fastx::filter(self, ids, out, keep),
             _ => unimplemented!(),
         }
     }

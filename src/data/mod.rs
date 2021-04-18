@@ -1,3 +1,6 @@
+//! # Organize sequencing batches and other bulk data
+//! Functions and methods to handle folders of raw sequencing data, right off the sequencer.
+
 use chrono::Local;
 use indoc::indoc;
 use regex::Regex;
