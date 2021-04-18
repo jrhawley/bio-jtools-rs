@@ -31,7 +31,7 @@ struct SeqDir {
     path: PathBuf,
     date: Date,
     instrument: String,
-    run: u8,
+    run: u16,
     position: char,
     flowcell: String,
     description: String,
@@ -72,7 +72,7 @@ impl SeqDir {
                 )
                 .unwrap();
                 let instrument = cap.get(4).unwrap().as_str();
-                let run = cap.get(5).unwrap().as_str().parse::<u8>().unwrap();
+                let run = cap.get(5).unwrap().as_str().parse::<u16>().unwrap();
                 let pos = cap.get(6).unwrap().as_str().parse::<char>().unwrap();
                 let flowcell = cap.get(7).unwrap().as_str();
                 let description = cap.get(8).unwrap().as_str();
@@ -116,7 +116,7 @@ impl SeqDir {
     }
 
     /// Run number of SeqDir run
-    pub fn run(&self) -> u8 {
+    pub fn run(&self) -> u16 {
         self.run
     }
 
