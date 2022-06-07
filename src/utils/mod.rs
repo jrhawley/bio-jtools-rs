@@ -100,7 +100,10 @@ impl HtsFile {
                 hts_type: hts_type,
             }
         } else {
-            panic!(format!("Could not parse HTS file type from path. Supported file extensions are (excluding compression): {:?}", SUPPORTED_EXTENSIONS));
+            panic!(
+                "{}",
+                format!("Could not parse HTS file type from path. Supported file extensions are (excluding compression): {:?}", SUPPORTED_EXTENSIONS)
+            );
         }
     }
     /// HTS file path
