@@ -1,4 +1,5 @@
 //! # Utilities and helper functions
+//!
 //! Various helper functions used throughout the `bio-jtools` crate
 
 use crate::align;
@@ -56,12 +57,6 @@ pub enum Variant {
     Vcf,
 }
 
-/// The structure to manage metadata for an HTS file
-pub struct HtsFile {
-    path: PathBuf,
-    hts_type: Hts,
-}
-
 const SUPPORTED_EXTENSIONS: [&'static str; 18] = [
     "bam",
     "sam",
@@ -82,6 +77,12 @@ const SUPPORTED_EXTENSIONS: [&'static str; 18] = [
     "broadPeak",
     "gappedPeak",
 ];
+
+/// The structure to manage metadata for an HTS file
+pub struct HtsFile {
+    path: PathBuf,
+    hts_type: Hts,
+}
 
 impl HtsFile {
     /// Create new HTS file
