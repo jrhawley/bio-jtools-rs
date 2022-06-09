@@ -116,21 +116,21 @@ impl HtsFile {
         self.hts_type
     }
 
-    /// Print HTS file information
-    pub fn print_info(&self, count_lengths: bool) {
-        match self.hts_type {
-            Hts::Fastx(_) => fastx::info(&self, count_lengths),
-            Hts::Align(Align::Bam) => {
-                let mut reader = BamReader::from_path(self.path(), 3).unwrap();
-                align::info(&mut reader, count_lengths)
-            }
-            Hts::Align(Align::Sam) => {
-                let mut reader = SamReader::from_path(self.path()).unwrap();
-                align::info(&mut reader, count_lengths)
-            }
-            _ => unimplemented!(),
-        }
-    }
+    // /// Print HTS file information
+    // pub fn print_info(&self, count_lengths: bool) {
+    //     match self.hts_type {
+    //         Hts::Fastx(_) => fastx::info(&self, count_lengths),
+    //         Hts::Align(Align::Bam) => {
+    //             let mut reader = BamReader::from_path(self.path(), 3).unwrap();
+    //             align::info(&mut reader, count_lengths)
+    //         }
+    //         Hts::Align(Align::Sam) => {
+    //             let mut reader = SamReader::from_path(self.path()).unwrap();
+    //             align::info(&mut reader, count_lengths)
+    //         }
+    //         _ => unimplemented!(),
+    //     }
+    // }
 
     /// Filter reads in an HTS file by their qname.
     pub fn filter(&self, ids: &Path, out: &Path, keep: bool) {
