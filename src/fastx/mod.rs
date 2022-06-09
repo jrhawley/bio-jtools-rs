@@ -23,8 +23,8 @@ use self::info_stats::FastqStats;
 #[derive(Debug, Parser)]
 pub(crate) struct InfoOpts {
     /// Get info about this HTS file
-    #[clap(name = "HTS", min_values(1), required = true)]
-    hts_path: Vec<PathBuf>,
+    #[clap(name = "HTS")]
+    hts_path: PathBuf,
 
     /// Count the total number of records
     #[clap(short, long)]
@@ -60,7 +60,7 @@ impl InfoOpts {}
 
 impl CliOpt for InfoOpts {
     fn exec(&self) {
-        let hts = HtsFile::new(&self.hts_path[0]);
+        let hts = HtsFile::new(&self.hts_path);
         match hts.filetype() {
             Hts::Fastx(Fastx::Fastq) => {
                 let mut reader = parse_fastx_file(hts.path()).expect("Error opening HTS file");
