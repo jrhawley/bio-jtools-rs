@@ -2,16 +2,17 @@
 //!
 //! A collection of utilities for handling batches of DNA sequencing files.
 
-use clap::{value_t, values_t, App, Arg, SubCommand};
-use std::fs::File;
-use std::path::Path;
-
 mod align;
+mod cli;
 mod data;
 mod fastx;
 mod interval;
 mod utils;
 
+use clap::Parser;
+use cli::Cli;
+use std::fs::File;
+use std::path::Path;
 use data::organize;
 use utils::HtsFile;
 
