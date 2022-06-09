@@ -61,11 +61,6 @@ impl FastqStats {
                 }
 
                 if opts.flow_cell_ids {
-                    let mut id_buf = String::new();
-                    seq.id().read_to_string(&mut id_buf);
-                    println!("{:#?}", seq.id());
-                    println!("{:#?}", id_buf);
-
                     // split the byte string by " "
                     let mut splits = seq.id().split(|x| *x == 32);
 
@@ -90,7 +85,15 @@ impl FastqStats {
                                 let mut fcid = String::new();
                                 s.read_to_string(&mut fcid);
 
-                                println!("{}", fcid);
+                                // track that this flow cell is used
+                                match self.flow_cell_ids.get_mut(&fcid) {
+                                    Some(v) => {
+                                        *v += 1;
+                                    }
+                                    None => {
+                                        self.flow_cell_ids.insert(fcid, 1);
+                                    }
+                                }
                             }
                         }
                         (Some(a), None, None) => todo!(),
