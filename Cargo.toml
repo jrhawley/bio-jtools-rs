@@ -1,7 +1,7 @@
 [package]
 name = "bio-jtools"
 version = "2022.6.6"
-authors = ["James Hawley <jamesrichardhawley@gmail.com>"]
+authors = ["James Hawley <developer@jrhawley.ca>"]
 edition = "2021"
 description = "A suite of bioinformatics tools for interacting with high throughput sequencing (HTS) data"
 license = "MIT"
@@ -19,6 +19,8 @@ include = [
 [dependencies]
 bam = "0.1"
 chrono = "0.4"
+clap = { version = "3", features = ["derive", "regex"] }
+clap-verbosity-flag = "1.0.0"
 flate2 = "1"
 indoc = "0.3"
 itertools = "0.9"
@@ -27,10 +29,7 @@ prettytable-rs = "0.8.0"
 rust-lapper = "0.4.4"
 regex = "1"
 walkdir = "2.3"
-
-[dependencies.clap]
-version = "2"
-features = ["color"]
+thiserror = "1.0.31"
 
 [[bin]]
 name = "bjt"
