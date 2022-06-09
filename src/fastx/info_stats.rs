@@ -36,6 +36,21 @@ impl FastqStats {
         }
     }
 
+    /// Get the total number of valid records
+    pub(crate) fn n_valid(&self) -> u64 {
+        self.valid_records
+    }
+
+    /// Get the total number of invalid records
+    pub(crate) fn n_invalid(&self) -> u64 {
+        self.invalid_records
+    }
+
+    /// Get the total number of records processed
+    pub(crate) fn n_records(&self) -> u64 {
+        self.n_valid() + self.n_invalid()
+    }
+
     /// Process a single record from a FASTQ file to record its statistics
     pub(crate) fn process_record(
         &mut self,

@@ -47,13 +47,8 @@ pub(crate) struct InfoOpts {
     format: OutputFormat,
 
     /// Keep statistics on the first N records
-    #[clap(
-        short = 'N',
-        long = "max-records",
-        name = "N",
-        default_value = "100000"
-    )]
-    n_max_records: u64,
+    #[clap(short = 'N', long = "max-records", name = "N")]
+    n_max_records: Option<u64>,
 }
 
 impl InfoOpts {}
@@ -68,6 +63,13 @@ impl CliOpt for InfoOpts {
 
                 while let Some(record) = reader.next() {
                     stats.process_record(&record, self);
+
+                    // check if the max capacity has been hit and break if so
+                    if let Some(n_max) = self.n_max_records {
+                        if n_max <= stats.n_records() {
+                            break;
+                        }
+                    }
                 }
 
                 println!("{:#?}", stats);
