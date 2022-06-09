@@ -99,15 +99,15 @@ impl FastqStats {
                                     let mut instrument_name = String::new();
 
                                     // wait until the last possible moment to store the instrument name as a string
-                                    s.read_to_string(&mut instrument_name);
-
-                                    // track that the instrument is being used
-                                    match self.instruments.get_mut(&instrument_name) {
-                                        Some(v) => {
-                                            *v += 1;
-                                        }
-                                        None => {
-                                            self.instruments.insert(instrument_name, 1);
+                                    if s.read_to_string(&mut instrument_name).is_ok() {
+                                        // track that the instrument is being used
+                                        match self.instruments.get_mut(&instrument_name) {
+                                            Some(v) => {
+                                                *v += 1;
+                                            }
+                                            None => {
+                                                self.instruments.insert(instrument_name, 1);
+                                            }
                                         }
                                     }
                                 }
@@ -122,15 +122,15 @@ impl FastqStats {
                                     let mut fcid = String::new();
 
                                     // wait until the last possible moment to store the flow cell ID as a string
-                                    s.read_to_string(&mut fcid);
-
-                                    // track that this flow cell is used
-                                    match self.flow_cell_ids.get_mut(&fcid) {
-                                        Some(v) => {
-                                            *v += 1;
-                                        }
-                                        None => {
-                                            self.flow_cell_ids.insert(fcid, 1);
+                                    if s.read_to_string(&mut fcid).is_ok() {
+                                        // track that this flow cell is used
+                                        match self.flow_cell_ids.get_mut(&fcid) {
+                                            Some(v) => {
+                                                *v += 1;
+                                            }
+                                            None => {
+                                                self.flow_cell_ids.insert(fcid, 1);
+                                            }
                                         }
                                     }
                                 }
