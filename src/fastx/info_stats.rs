@@ -20,8 +20,11 @@ pub(crate) struct FastqStats {
     /// Length distribution of records
     lengths: HashMap<u64, u64>,
 
+    /// Sequencing instruments
+    instruments: HashMap<String, u64>,
+
     /// Flow cell IDs
-    flow_cell_ids: HashMap<String, u32>,
+    flow_cell_ids: HashMap<String, u64>,
 }
 
 impl FastqStats {
@@ -32,6 +35,7 @@ impl FastqStats {
             invalid_records: 0,
             bases: 0,
             lengths: HashMap::new(),
+            instruments: HashMap::new(),
             flow_cell_ids: HashMap::new(),
         }
     }
@@ -75,7 +79,7 @@ impl FastqStats {
                     }
                 }
 
-                if opts.flow_cell_ids {
+                if opts.flow_cell_ids || opts.instruments {
                     // split the byte string by " "
                     let mut splits = seq.id().split(|x| *x == 32);
 
@@ -90,23 +94,44 @@ impl FastqStats {
                             let mut id_splits = a.split(|x| *x == 58);
 
                             // instrument name
-                            id_splits.next();
+                            if opts.instruments {
+                                if let Some(mut s) = id_splits.next() {
+                                    let mut instrument_name = String::new();
+
+                                    // wait until the last possible moment to store the instrument name as a string
+                                    s.read_to_string(&mut instrument_name);
+
+                                    // track that the instrument is being used
+                                    match self.instruments.get_mut(&instrument_name) {
+                                        Some(v) => {
+                                            *v += 1;
+                                        }
+                                        None => {
+                                            self.instruments.insert(instrument_name, 1);
+                                        }
+                                    }
+                                }
+                            }
 
                             // run ID
                             id_splits.next();
 
                             // flow cell ID
-                            if let Some(mut s) = id_splits.next() {
-                                let mut fcid = String::new();
-                                s.read_to_string(&mut fcid);
+                            if opts.flow_cell_ids {
+                                if let Some(mut s) = id_splits.next() {
+                                    let mut fcid = String::new();
 
-                                // track that this flow cell is used
-                                match self.flow_cell_ids.get_mut(&fcid) {
-                                    Some(v) => {
-                                        *v += 1;
-                                    }
-                                    None => {
-                                        self.flow_cell_ids.insert(fcid, 1);
+                                    // wait until the last possible moment to store the flow cell ID as a string
+                                    s.read_to_string(&mut fcid);
+
+                                    // track that this flow cell is used
+                                    match self.flow_cell_ids.get_mut(&fcid) {
+                                        Some(v) => {
+                                            *v += 1;
+                                        }
+                                        None => {
+                                            self.flow_cell_ids.insert(fcid, 1);
+                                        }
                                     }
                                 }
                             }
