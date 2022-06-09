@@ -2,6 +2,8 @@
 //!
 //! Various helper functions used throughout the `bio-jtools` crate
 
+pub(crate) mod formats;
+
 use crate::align;
 use crate::fastx;
 use bam::{BamReader, BamWriter, SamReader, SamWriter};
