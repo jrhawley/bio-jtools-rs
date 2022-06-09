@@ -19,6 +19,7 @@ pub(crate) enum SubCmd {
     Filter,
 
     /// Organize a batch of raw sequencing data
+    #[clap(name = "org")]
     Organize,
 }
 
