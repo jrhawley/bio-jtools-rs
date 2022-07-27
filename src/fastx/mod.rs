@@ -51,27 +51,33 @@ pub(crate) struct InfoOpts {
     n_max_records: Option<u64>,
 }
 
-impl InfoOpts {}
+impl InfoOpts {
+    /// Get information and statistics about a desired FASTQ file
+    fn calc_fastq_info(&self, hts: HtsFile) -> FastqStats {
+        let mut stats = FastqStats::new();
+        let mut reader = parse_fastx_file(hts.path()).expect("Error opening HTS file");
+
+        if let Some(n_max) = self.n_max_records {
+            // check if the max capacity has been hit
+            while let (true, Some(record)) = (stats.n_records() < n_max, reader.next()) {
+                stats.process_record(&record, self);
+            }
+        } else {
+            while let Some(record) = reader.next() {
+                stats.process_record(&record, self);
+            }
+        }
+
+        stats
+    }
+}
 
 impl CliOpt for InfoOpts {
     fn exec(&self) {
         let hts = HtsFile::new(&self.hts_path);
         match hts.filetype() {
             Hts::Fastx(Fastx::Fastq) => {
-                let mut reader = parse_fastx_file(hts.path()).expect("Error opening HTS file");
-                let mut stats = FastqStats::new();
-
-                while let Some(record) = reader.next() {
-                    stats.process_record(&record, self);
-
-                    // check if the max capacity has been hit and break if so
-                    if let Some(n_max) = self.n_max_records {
-                        if n_max <= stats.n_records() {
-                            break;
-                        }
-                    }
-                }
-
+                let stats = self.calc_fastq_info(hts);
                 println!("{:#?}", stats);
             }
             _ => todo!(),
