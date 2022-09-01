@@ -122,24 +122,23 @@ impl FastqStats {
         let mut id_splits = rname.split(|x| *x == illumina_separator_ascii_code);
 
         // instrument name
+        let inst = id_splits.next();
         if opts.instruments {
-            self.process_illumina_instrument(&mut id_splits);
+            self.process_illumina_instrument(inst);
         }
 
         // run ID
-        id_splits.next();
+        let run_id = id_splits.next();
 
         // flow cell ID
+        let fcid = id_splits.next();
         if opts.flow_cell_ids {
-            self.process_illumina_flowcell(&mut id_splits);
+            self.process_illumina_flowcell(fcid);
         }
     }
 
-    fn process_illumina_flowcell<P>(&mut self, id_splits: &mut Split<'_, u8, P>)
-    where
-        P: FnMut(&u8) -> bool,
-    {
-        if let Some(mut s) = id_splits.next() {
+    fn process_illumina_flowcell<P>(&mut self, fcid: Option<&[u8]>) {
+        if let Some(mut s) = fcid {
             let mut fcid = String::new();
 
             // wait until the last possible moment to store the flow cell ID as a string
@@ -157,11 +156,8 @@ impl FastqStats {
         }
     }
 
-    fn process_illumina_instrument<P>(&mut self, id_splits: &mut Split<'_, u8, P>)
-    where
-        P: FnMut(&u8) -> bool,
-    {
-        if let Some(mut s) = id_splits.next() {
+    fn process_illumina_instrument(&mut self, inst: Option<&[u8]>) {
+        if let Some(mut s) = inst {
             let mut instrument_name = String::new();
 
             // wait until the last possible moment to store the instrument name as a string
