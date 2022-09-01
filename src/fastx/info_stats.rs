@@ -137,7 +137,7 @@ impl FastqStats {
         }
     }
 
-    fn process_illumina_flowcell<P>(&mut self, fcid: Option<&[u8]>) {
+    fn process_illumina_flowcell(&mut self, fcid: Option<&[u8]>) {
         if let Some(mut s) = fcid {
             let mut fcid = String::new();
 
