@@ -1,3 +1,4 @@
 debug.log
 /target
 **/*.rs.bk
+.DS_Store
