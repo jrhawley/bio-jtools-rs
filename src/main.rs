@@ -17,8 +17,8 @@ fn main() {
 
     match args.cmd {
         SubCmd::Info(hts) => match hts {
-            InfoSubCmd::Bam => {
-                todo!()
+            InfoSubCmd::Bam(opts) => {
+                opts.exec();
             }
             InfoSubCmd::Bed => {
                 todo!()
