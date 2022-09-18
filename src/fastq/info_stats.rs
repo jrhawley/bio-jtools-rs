@@ -1,9 +1,8 @@
-//! Statistics to record when parsing info about an HTS file
-
-use needletail::{errors::ParseError, parser::SequenceRecord};
-use std::{collections::HashMap, io::Read};
+//! Statistics for a FASTQ file.
 
 use super::FastqInfoOpts;
+use needletail::{errors::ParseError, parser::SequenceRecord};
+use std::{collections::HashMap, io::Read};
 
 /// Statistics from a FASTQ file
 #[derive(Debug)]
