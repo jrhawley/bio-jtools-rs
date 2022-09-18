@@ -118,22 +118,6 @@ impl HtsFile {
         self.hts_type
     }
 
-    // /// Print HTS file information
-    // pub fn print_info(&self, count_lengths: bool) {
-    //     match self.hts_type {
-    //         Hts::Fastx(_) => fastx::info(&self, count_lengths),
-    //         Hts::Align(Align::Bam) => {
-    //             let mut reader = BamReader::from_path(self.path(), 3).unwrap();
-    //             align::info(&mut reader, count_lengths)
-    //         }
-    //         Hts::Align(Align::Sam) => {
-    //             let mut reader = SamReader::from_path(self.path()).unwrap();
-    //             align::info(&mut reader, count_lengths)
-    //         }
-    //         _ => unimplemented!(),
-    //     }
-    // }
-
     /// Filter reads in an HTS file by their name.
     pub fn filter(&self, ids: &Path, out: &Path, keep: bool) {
         // match on the combination of input/output files
@@ -142,25 +126,25 @@ impl HtsFile {
             (Hts::Align(Align::Bam), Some(Hts::Align(Align::Bam))) => {
                 let mut reader = BamReader::from_path(self.path(), 3).unwrap();
                 let mut writer = BamWriter::from_path(out, reader.header().clone()).unwrap();
-                align::filter(&mut reader, ids, &mut writer, keep)
+                align::filter::filter(&mut reader, ids, &mut writer, keep)
             }
             // BAM => SAM
             (Hts::Align(Align::Bam), Some(Hts::Align(Align::Sam))) => {
                 let mut reader = BamReader::from_path(self.path(), 3).unwrap();
                 let mut writer = SamWriter::from_path(out, reader.header().clone()).unwrap();
-                align::filter(&mut reader, ids, &mut writer, keep)
+                align::filter::filter(&mut reader, ids, &mut writer, keep)
             }
             // SAM => BAM
             (Hts::Align(Align::Sam), Some(Hts::Align(Align::Bam))) => {
                 let mut reader = SamReader::from_path(self.path()).unwrap();
                 let mut writer = BamWriter::from_path(out, reader.header().clone()).unwrap();
-                align::filter(&mut reader, ids, &mut writer, keep)
+                align::filter::filter(&mut reader, ids, &mut writer, keep)
             }
             // SAM => SAM
             (Hts::Align(Align::Sam), Some(Hts::Align(Align::Sam))) => {
                 let mut reader = SamReader::from_path(self.path()).unwrap();
                 let mut writer = SamWriter::from_path(out, reader.header().clone()).unwrap();
-                align::filter(&mut reader, ids, &mut writer, keep)
+                align::filter::filter(&mut reader, ids, &mut writer, keep)
             }
             (Hts::Fastx(_), Some(Hts::Fastx(_))) => fastq::filter(self, ids, out, keep),
             _ => unimplemented!(),
