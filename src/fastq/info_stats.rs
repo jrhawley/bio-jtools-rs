@@ -1,9 +1,9 @@
 //! Statistics to record when parsing info about an HTS file
 
 use needletail::{errors::ParseError, parser::SequenceRecord};
-use std::{collections::HashMap, io::Read, slice::Split};
+use std::{collections::HashMap, io::Read};
 
-use super::InfoOpts;
+use super::FastqInfoOpts;
 
 /// Statistics from a FASTQ file
 #[derive(Debug)]
@@ -59,7 +59,7 @@ impl FastqStats {
     pub(crate) fn process_record(
         &mut self,
         rec: &Result<SequenceRecord, ParseError>,
-        opts: &InfoOpts,
+        opts: &FastqInfoOpts,
     ) {
         if let Ok(seq) = rec {
             self.process_valid_record(seq, opts);
@@ -69,7 +69,7 @@ impl FastqStats {
     }
 
     /// Process the statistics for a valid record
-    fn process_valid_record(&mut self, seq: &SequenceRecord, opts: &InfoOpts) {
+    fn process_valid_record(&mut self, seq: &SequenceRecord, opts: &FastqInfoOpts) {
         self.valid_records += 1;
 
         let seq_length: u64 = seq.num_bases().try_into().unwrap();
@@ -114,7 +114,7 @@ impl FastqStats {
     }
 
     /// Process an Illumina (Casava >= v1.8) formatted FASTQ record
-    fn process_illumina_split_record(&mut self, rname: &[u8], opts: &InfoOpts) {
+    fn process_illumina_split_record(&mut self, rname: &[u8], opts: &FastqInfoOpts) {
         // split the first element of the byte string by ":"
         let illumina_separator_ascii_code = 58;
 

@@ -1,7 +1,5 @@
 //! Header formats for FASTX files.
 
-use std::borrow::Cow;
-
 pub(crate) enum FastqId {
     CasavaV1(CasavaV1Id),
     CasavaV1_8(CasavaV1_8Id),

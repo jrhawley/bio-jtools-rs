@@ -1,8 +1,7 @@
 //! Command line interface options and parsing
 
+use crate::fastq::FastqInfoOpts;
 use clap::{Parser, Subcommand};
-
-use crate::fastx::InfoOpts;
 
 #[derive(Debug, Parser)]
 #[clap(author, version, about)]

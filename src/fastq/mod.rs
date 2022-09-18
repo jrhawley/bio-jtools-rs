@@ -1,10 +1,12 @@
-//! # Process and organize sequencing batches and other bulk data
-//!
-//! Functions and methods related to processing raw sequencing files, such as [FASTA](https://en.wikipedia.org/wiki/FASTA_format) and [FASTQ](https://en.wikipedia.org/wiki/FASTQ_format) files.
+//! Process raw sequencing [FASTQ](https://en.wikipedia.org/wiki/FASTQ_format) files.
 
 pub(crate) mod header;
 pub(crate) mod info_stats;
 
+use self::info_stats::FastqStats;
+use crate::cli::CliOpt;
+use crate::utils::formats::OutputFormat;
+use crate::utils::{Fastx, Hts, HtsFile};
 use clap::Parser;
 use core::panic;
 use needletail::parse_fastx_file;
@@ -13,15 +15,9 @@ use std::io::{BufRead, BufReader, BufWriter};
 use std::path::{Path, PathBuf};
 use std::str::from_utf8;
 
-use crate::cli::CliOpt;
-use crate::utils::formats::OutputFormat;
-use crate::utils::{Fastx, Hts, HtsFile};
-
-use self::info_stats::FastqStats;
-
 /// CLI options for getting info from an HTS file
 #[derive(Debug, Parser)]
-pub(crate) struct InfoOpts {
+pub(crate) struct FastqInfoOpts {
     /// Get info about this HTS file
     #[clap(name = "HTS")]
     hts_path: PathBuf,
@@ -51,7 +47,7 @@ pub(crate) struct InfoOpts {
     n_max_records: Option<u64>,
 }
 
-impl InfoOpts {
+impl FastqInfoOpts {
     /// Get information and statistics about a desired FASTQ file
     fn calc_fastq_info(&self, hts: HtsFile) -> FastqStats {
         let mut stats = FastqStats::new();
@@ -72,7 +68,7 @@ impl InfoOpts {
     }
 }
 
-impl CliOpt for InfoOpts {
+impl CliOpt for FastqInfoOpts {
     fn exec(&self) {
         let hts = HtsFile::new(&self.hts_path);
         match hts.filetype() {
@@ -88,7 +84,7 @@ impl CliOpt for InfoOpts {
 /// Filter out reads according to a list of IDs
 /// Assumes a sorted Fastx file and a sorted list of IDs
 /// # Arguments
-/// * hts: HtsFile for a name-sorted Fastx file. Sort with `(z)cat | paste | sort -n`
+/// * hts: HtsFile for a name-sorted FASTA file. Sort with `(z)cat | paste | sort -n`
 /// * ids: A name-sorted file containing IDs to filter out (or keep) from the Fastx file. Sort with `sort ids.in > ids.filtered.out`.
 /// * out: Output file to write filtered reads to
 /// * keep: Boolean to keep the reads matching IDs in `ids` (`true`) or discard them (`false`)

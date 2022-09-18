@@ -5,7 +5,7 @@
 pub(crate) mod formats;
 
 use crate::align;
-use crate::fastx;
+use crate::fastq;
 use bam::{BamReader, BamWriter, SamReader, SamWriter};
 use std::path::{Path, PathBuf};
 
@@ -100,7 +100,7 @@ impl HtsFile {
         if let Some(hts_type) = detect_filetype(path) {
             HtsFile {
                 path: path.to_path_buf(),
-                hts_type: hts_type,
+                hts_type,
             }
         } else {
             panic!(
@@ -162,7 +162,7 @@ impl HtsFile {
                 let mut writer = SamWriter::from_path(out, reader.header().clone()).unwrap();
                 align::filter(&mut reader, ids, &mut writer, keep)
             }
-            (Hts::Fastx(_), Some(Hts::Fastx(_))) => fastx::filter(self, ids, out, keep),
+            (Hts::Fastx(_), Some(Hts::Fastx(_))) => fastq::filter(self, ids, out, keep),
             _ => unimplemented!(),
         }
     }

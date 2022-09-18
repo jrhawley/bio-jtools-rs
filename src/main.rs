@@ -5,7 +5,7 @@
 mod align;
 mod cli;
 mod data;
-mod fastx;
+mod fastq;
 mod interval;
 mod utils;
 
