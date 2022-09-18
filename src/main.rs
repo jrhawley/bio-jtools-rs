@@ -10,24 +10,32 @@ mod interval;
 mod utils;
 
 use clap::Parser;
-use cli::Cli;
-use std::fs::File;
-use std::path::Path;
-use data::organize;
-use utils::HtsFile;
-
-use crate::cli::CliOpt;
+use cli::{Cli, CliOpt, InfoSubCmd, SubCmd};
 
 fn main() {
     let args = Cli::parse();
 
     match args.cmd {
-        cli::SubCmd::Info(opts) => {
-            // println!("{:#?}", opts);
-            opts.exec();
+        SubCmd::Info(hts) => match hts {
+            InfoSubCmd::Bam => {
+                todo!()
+            }
+            InfoSubCmd::Bed => {
+                todo!()
+            }
+            InfoSubCmd::Fasta => {
+                todo!()
+            }
+            InfoSubCmd::Fastq(opts) => {
+                opts.exec();
+            }
+        },
+        SubCmd::Filter => {
+            todo!()
         }
-        cli::SubCmd::Filter => {}
-        cli::SubCmd::Organize => {}
+        SubCmd::Organize => {
+            todo!()
+        }
     }
 
     // let _matches = App::new(env!("CARGO_PKG_NAME"))
