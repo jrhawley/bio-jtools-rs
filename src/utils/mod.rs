@@ -134,7 +134,7 @@ impl HtsFile {
     //     }
     // }
 
-    /// Filter reads in an HTS file by their qname.
+    /// Filter reads in an HTS file by their name.
     pub fn filter(&self, ids: &Path, out: &Path, keep: bool) {
         // match on the combination of input/output files
         match (self.filetype(), detect_filetype(out)) {
