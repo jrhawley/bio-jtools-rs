@@ -1,4 +1,10 @@
-//! Header formats for FASTX files.
+//! Header formats for FASTA and FASTQ files.
+
+// split the first element of the byte string by ":"
+pub const ILLUMINA_SEPARATOR_ASCII_CODE: u8 = 58;
+
+// split the byte string by " "
+pub const RNAME_SEPARATOR_ASCII_CODE: u8 = 32;
 
 pub(crate) enum FastqId {
     CasavaV1(CasavaV1Id),

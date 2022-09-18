@@ -1,6 +1,9 @@
 //! Statistics for a FASTQ file.
 
-use super::FastqInfoOpts;
+use super::{
+    header::{ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE},
+    FastqInfoOpts,
+};
 use needletail::{errors::ParseError, parser::SequenceRecord};
 use std::{collections::HashMap, io::Read};
 
@@ -78,10 +81,7 @@ impl FastqStats {
             self.update_lengths(seq_length);
         }
         if opts.flow_cell_ids || opts.instruments {
-            // split the byte string by " "
-            let rname_separator_ascii_code = 32;
-
-            let mut splits = seq.id().split(|x| *x == rname_separator_ascii_code);
+            let mut splits = seq.id().split(|x| *x == RNAME_SEPARATOR_ASCII_CODE);
 
             match (splits.next(), splits.next(), splits.next()) {
                 (Some(_), Some(_), Some(_)) => self.process_sra_split_record(),
@@ -114,11 +114,8 @@ impl FastqStats {
 
     /// Process an Illumina (Casava >= v1.8) formatted FASTQ record
     fn process_illumina_split_record(&mut self, rname: &[u8], opts: &FastqInfoOpts) {
-        // split the first element of the byte string by ":"
-        let illumina_separator_ascii_code = 58;
-
         // Illumina Casava >= v1.8 format
-        let mut id_splits = rname.split(|x| *x == illumina_separator_ascii_code);
+        let mut id_splits = rname.split(|x| *x == ILLUMINA_SEPARATOR_ASCII_CODE);
 
         // instrument name
         let inst = id_splits.next();
