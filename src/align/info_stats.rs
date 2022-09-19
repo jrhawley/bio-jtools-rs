@@ -6,6 +6,8 @@ use std::{
     io,
 };
 
+use crate::fastq::header::RNAME_SEPARATOR_ASCII_CODE;
+
 use super::SamBamCramInfoOpts;
 
 /// Important statistics from a SAM/BAM/CRAM file.
@@ -90,7 +92,25 @@ impl SamBamCramStats {
             self.update_lengths(seq_length);
         }
 
-        todo!();
+        if opts.flow_cell_ids || opts.instruments {
+            let mut splits = seq.name().split(|x| *x == RNAME_SEPARATOR_ASCII_CODE);
+
+            match (splits.next(), splits.next(), splits.next()) {
+                (Some(_), Some(_), Some(_)) => self.process_sra_split_record(),
+                (Some(a), Some(_), None) => self.process_illumina_split_record(a, opts),
+                (Some(_), None, None) => self.process_illumina_pre_v1_8_split_record(),
+                _ => todo!(),
+            };
+        }
+    }
+
+    /// Update the information about the lengths of records
+    fn update_lengths(&mut self, seq_length: u64) {
+        if let Some(v) = self.lengths.get_mut(&seq_length) {
+            *v += 1;
+        } else {
+            self.lengths.insert(seq_length, 1);
+        }
     }
 
     /// Process the statistics for an invalid record
@@ -98,6 +118,26 @@ impl SamBamCramStats {
         self.invalid_records += 1;
     }
 
+    /// Process a Sequence Read Archive FASTQ record
+    fn process_sra_split_record(&mut self) {
+        // Sequence Read Archive ID will be ignored since there is no
+        // way to figure out what the original flow cell IDs were
+    }
+
+    /// Process an Illumina (Casava >= v1.8) formatted FASTQ record
+    fn process_illumina_split_record(&mut self, rname: &[u8], opts: &SamBamCramInfoOpts) {
+        todo!()
+    fn process_illumina_flowcell(&mut self, fcid: Option<&[u8]>) {
+        todo!()
+
+    fn process_illumina_instrument(&mut self, inst: Option<&[u8]>) {
+        todo!()
+    }
+
+    /// Process an Illumina (Casava < v1.8) formatted FASTQ record
+    fn process_illumina_pre_v1_8_split_record(&mut self) {
+        todo!()
+    }
 }
 
 /// Helper function for the most efficient looping over a SAM/BAM file
