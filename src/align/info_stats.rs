@@ -36,6 +36,38 @@ pub struct SamBamCramStats {
     genome_support: (),
 }
 
+impl SamBamCramStats {
+    /// Create a new set of statistics for a FASTQ file
+    pub(crate) fn new() -> Self {
+        SamBamCramStats {
+            valid_records: 0,
+            invalid_records: 0,
+            bases: 0,
+            lengths: HashMap::new(),
+            instruments: HashMap::new(),
+            flow_cell_ids: HashMap::new(),
+            genome_depth: (),
+            genome_support: (),
+        }
+    }
+
+    /// Get the total number of valid records
+    pub(crate) fn n_valid(&self) -> u64 {
+        self.valid_records
+    }
+
+    /// Get the total number of invalid records
+    pub(crate) fn n_invalid(&self) -> u64 {
+        self.invalid_records
+    }
+
+    /// Get the total number of records processed
+    pub(crate) fn n_records(&self) -> u64 {
+        self.n_valid() + self.n_invalid()
+    }
+
+}
+
 /// Helper function for the most efficient looping over a SAM/BAM file
 fn count_info<T: RecordReader>(reader: &mut T) -> BTreeMap<String, String> {
     // values to keep and display
