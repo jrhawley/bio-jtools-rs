@@ -32,11 +32,6 @@ pub(crate) struct FastqStats {
 }
 
 impl FastqStats {
-    /// Get the total number of records processed
-    pub(crate) fn n_records(&self) -> u64 {
-        self.n_valid() + self.n_invalid()
-    }
-
     /// Process a single record from a FASTQ file to record its statistics
     pub(crate) fn process_record(
         &mut self,
@@ -152,17 +147,6 @@ impl FastqStats {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let expected = 4;
-        let observed = 2 + 2;
-
-        assert_eq!(expected, observed);
-    }
-}
-
 impl RecordStats for FastqStats {
     /// Create a new set of statistics for a FASTQ file
     fn new() -> Self {
@@ -186,5 +170,16 @@ impl RecordStats for FastqStats {
 
     fn process_invalid_record(&mut self) {
         self.invalid_records += 1;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        let expected = 4;
+        let observed = 2 + 2;
+
+        assert_eq!(expected, observed);
     }
 }
