@@ -5,6 +5,7 @@ pub(crate) mod info_stats;
 
 use self::info_stats::FastqStats;
 use crate::cli::CliOpt;
+use crate::record::stats::RecordStats;
 use crate::utils::formats::OutputFormat;
 use crate::utils::{Fastx, Hts, HtsFile};
 use clap::Parser;

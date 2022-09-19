@@ -1,5 +1,7 @@
 //! Statistics for a FASTQ file.
 
+use crate::record::stats::RecordStats;
+
 use super::{
     header::{ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE},
     FastqInfoOpts,
@@ -30,28 +32,6 @@ pub(crate) struct FastqStats {
 }
 
 impl FastqStats {
-    /// Create a new set of statistics for a FASTQ file
-    pub(crate) fn new() -> Self {
-        FastqStats {
-            valid_records: 0,
-            invalid_records: 0,
-            bases: 0,
-            lengths: HashMap::new(),
-            instruments: HashMap::new(),
-            flow_cell_ids: HashMap::new(),
-        }
-    }
-
-    /// Get the total number of valid records
-    pub(crate) fn n_valid(&self) -> u64 {
-        self.valid_records
-    }
-
-    /// Get the total number of invalid records
-    pub(crate) fn n_invalid(&self) -> u64 {
-        self.invalid_records
-    }
-
     /// Get the total number of records processed
     pub(crate) fn n_records(&self) -> u64 {
         self.n_valid() + self.n_invalid()
@@ -99,11 +79,6 @@ impl FastqStats {
         } else {
             self.lengths.insert(seq_length, 1);
         }
-    }
-
-    /// Process the statistics for an invalid record
-    fn process_invalid_record(&mut self) {
-        self.invalid_records += 1;
     }
 
     /// Process a Sequence Read Archive FASTQ record
@@ -185,5 +160,31 @@ mod tests {
         let observed = 2 + 2;
 
         assert_eq!(expected, observed);
+    }
+}
+
+impl RecordStats for FastqStats {
+    /// Create a new set of statistics for a FASTQ file
+    fn new() -> Self {
+        FastqStats {
+            valid_records: 0,
+            invalid_records: 0,
+            bases: 0,
+            lengths: HashMap::new(),
+            instruments: HashMap::new(),
+            flow_cell_ids: HashMap::new(),
+        }
+    }
+
+    fn n_valid(&self) -> u64 {
+        self.valid_records
+    }
+
+    fn n_invalid(&self) -> u64 {
+        self.invalid_records
+    }
+
+    fn process_invalid_record(&mut self) {
+        self.invalid_records += 1;
     }
 }
