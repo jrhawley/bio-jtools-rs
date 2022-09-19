@@ -83,6 +83,13 @@ impl SamBamCramStats {
     fn process_valid_record(&mut self, seq: &bam::Record, opts: &SamBamCramInfoOpts) {
         self.valid_records += 1;
 
+        let seq_length: u64 = seq.query_len().try_into().unwrap();
+        self.bases += seq_length;
+
+        if opts.lengths {
+            self.update_lengths(seq_length);
+        }
+
         todo!();
     }
 
