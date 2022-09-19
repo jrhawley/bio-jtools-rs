@@ -6,7 +6,10 @@ use std::{
     io,
 };
 
-use crate::fastq::header::{ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE};
+use crate::{
+    fastq::header::{ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE},
+    record::stats::RecordStats,
+};
 
 use super::SamBamCramInfoOpts;
 
@@ -39,35 +42,6 @@ pub struct SamBamCramStats {
 }
 
 impl SamBamCramStats {
-    /// Create a new set of statistics for a FASTQ file
-    pub(crate) fn new() -> Self {
-        SamBamCramStats {
-            valid_records: 0,
-            invalid_records: 0,
-            bases: 0,
-            lengths: HashMap::new(),
-            instruments: HashMap::new(),
-            flow_cell_ids: HashMap::new(),
-            genome_depth: (),
-            genome_support: (),
-        }
-    }
-
-    /// Get the total number of valid records
-    pub(crate) fn n_valid(&self) -> u64 {
-        self.valid_records
-    }
-
-    /// Get the total number of invalid records
-    pub(crate) fn n_invalid(&self) -> u64 {
-        self.invalid_records
-    }
-
-    /// Get the total number of records processed
-    pub(crate) fn n_records(&self) -> u64 {
-        self.n_valid() + self.n_invalid()
-    }
-
     /// Process a single record from a FASTQ file to record its statistics
     pub(crate) fn process_record(
         &mut self,
@@ -113,11 +87,6 @@ impl SamBamCramStats {
         }
     }
 
-    /// Process the statistics for an invalid record
-    fn process_invalid_record(&mut self) {
-        self.invalid_records += 1;
-    }
-
     /// Process a Sequence Read Archive FASTQ record
     fn process_sra_split_record(&mut self) {
         // Sequence Read Archive ID will be ignored since there is no
@@ -155,5 +124,33 @@ impl SamBamCramStats {
     /// Process an Illumina (Casava < v1.8) formatted FASTQ record
     fn process_illumina_pre_v1_8_split_record(&mut self) {
         todo!()
+    }
+}
+
+impl RecordStats for SamBamCramStats {
+    /// Create a new set of statistics for a SAM/BAM/CRAM file
+    fn new() -> Self {
+        SamBamCramStats {
+            valid_records: 0,
+            invalid_records: 0,
+            bases: 0,
+            lengths: HashMap::new(),
+            instruments: HashMap::new(),
+            flow_cell_ids: HashMap::new(),
+            genome_depth: (),
+            genome_support: (),
+        }
+    }
+
+    fn n_valid(&self) -> u64 {
+        self.valid_records
+    }
+
+    fn n_invalid(&self) -> u64 {
+        self.invalid_records
+    }
+
+    fn process_invalid_record(&mut self) {
+        self.invalid_records += 1;
     }
 }

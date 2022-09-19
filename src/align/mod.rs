@@ -8,6 +8,7 @@ pub mod reader;
 use self::{info_stats::SamBamCramStats, reader::SamBamCramReader};
 use crate::{
     cli::CliOpt,
+    record::stats::RecordStats,
     utils::{formats::OutputFormat, Align, Hts, HtsFile},
 };
 use bam::{BamReader, SamReader};
