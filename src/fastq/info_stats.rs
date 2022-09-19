@@ -32,12 +32,6 @@ pub(crate) struct FastqStats {
 }
 
 impl FastqStats {
-    /// Process a Sequence Read Archive FASTQ record
-    fn process_sra_split_record(&mut self) {
-        // Sequence Read Archive ID will be ignored since there is no
-        // way to figure out what the original flow cell IDs were
-    }
-
     /// Process an Illumina (Casava >= v1.8) formatted FASTQ record
     fn process_illumina_split_record(&mut self, rname: &[u8], opts: &FastqInfoOpts) {
         // Illumina Casava >= v1.8 format
@@ -57,49 +51,6 @@ impl FastqStats {
         if opts.flow_cell_ids {
             self.process_illumina_flowcell(fcid);
         }
-    }
-
-    fn process_illumina_flowcell(&mut self, fcid: Option<&[u8]>) {
-        if let Some(mut s) = fcid {
-            let mut fcid = String::new();
-
-            // wait until the last possible moment to store the flow cell ID as a string
-            if s.read_to_string(&mut fcid).is_ok() {
-                // track that this flow cell is used
-                match self.flow_cell_ids.get_mut(&fcid) {
-                    Some(v) => {
-                        *v += 1;
-                    }
-                    None => {
-                        self.flow_cell_ids.insert(fcid, 1);
-                    }
-                }
-            }
-        }
-    }
-
-    fn process_illumina_instrument(&mut self, inst: Option<&[u8]>) {
-        if let Some(mut s) = inst {
-            let mut instrument_name = String::new();
-
-            // wait until the last possible moment to store the instrument name as a string
-            if s.read_to_string(&mut instrument_name).is_ok() {
-                // track that the instrument is being used
-                match self.instruments.get_mut(&instrument_name) {
-                    Some(v) => {
-                        *v += 1;
-                    }
-                    None => {
-                        self.instruments.insert(instrument_name, 1);
-                    }
-                }
-            }
-        }
-    }
-
-    /// Process an Illumina (Casava < v1.8) formatted FASTQ record
-    fn process_illumina_pre_v1_8_split_record(&mut self) {
-        todo!()
     }
 }
 
@@ -130,6 +81,14 @@ impl<'a> RecordStats<'a> for FastqStats {
 
     fn mut_lengths(&mut self) -> &mut HashMap<u64, u64> {
         &mut self.lengths
+    }
+
+    fn mut_flow_cells(&mut self) -> &mut HashMap<String, u64> {
+        &mut self.flow_cell_ids
+    }
+
+    fn mut_instruments(&mut self) -> &mut HashMap<String, u64> {
+        &mut self.instruments
     }
 
     fn process_valid_record(&mut self, seq: &SequenceRecord, opts: &FastqInfoOpts) {
