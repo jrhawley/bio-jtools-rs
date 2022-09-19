@@ -66,6 +66,31 @@ impl SamBamCramStats {
         self.n_valid() + self.n_invalid()
     }
 
+    /// Process a single record from a FASTQ file to record its statistics
+    pub(crate) fn process_record(
+        &mut self,
+        rec: &Result<bam::Record, io::Error>,
+        opts: &SamBamCramInfoOpts,
+    ) {
+        if let Ok(seq) = rec {
+            self.process_valid_record(seq, opts);
+        } else {
+            self.process_invalid_record();
+        }
+    }
+
+    /// Process the statistics for a valid record
+    fn process_valid_record(&mut self, seq: &bam::Record, opts: &SamBamCramInfoOpts) {
+        self.valid_records += 1;
+
+        todo!();
+    }
+
+    /// Process the statistics for an invalid record
+    fn process_invalid_record(&mut self) {
+        self.invalid_records += 1;
+    }
+
 }
 
 /// Helper function for the most efficient looping over a SAM/BAM file
