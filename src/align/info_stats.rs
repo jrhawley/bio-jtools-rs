@@ -6,7 +6,7 @@ use std::{
     io,
 };
 
-use crate::fastq::header::RNAME_SEPARATOR_ASCII_CODE;
+use crate::fastq::header::{ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE};
 
 use super::SamBamCramInfoOpts;
 
@@ -126,7 +126,25 @@ impl SamBamCramStats {
 
     /// Process an Illumina (Casava >= v1.8) formatted FASTQ record
     fn process_illumina_split_record(&mut self, rname: &[u8], opts: &SamBamCramInfoOpts) {
-        todo!()
+        // Illumina Casava >= v1.8 format
+        let mut id_splits = rname.split(|x| *x == ILLUMINA_SEPARATOR_ASCII_CODE);
+
+        // instrument name
+        let inst = id_splits.next();
+        if opts.instruments {
+            self.process_illumina_instrument(inst);
+        }
+
+        // run ID
+        let run_id = id_splits.next();
+
+        // flow cell ID
+        let fcid = id_splits.next();
+        if opts.flow_cell_ids {
+            self.process_illumina_flowcell(fcid);
+        }
+    }
+
     fn process_illumina_flowcell(&mut self, fcid: Option<&[u8]>) {
         todo!()
 
