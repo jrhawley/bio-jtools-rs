@@ -17,7 +17,7 @@ use std::path::PathBuf;
 
 /// CLI options for getting info from an HTS file
 #[derive(Debug, Parser)]
-pub(crate) struct SamBamCramInfoOpts {
+pub struct SamBamCramInfoOpts {
     /// Get info about this HTS file
     #[clap(name = "HTS")]
     hts_path: PathBuf,

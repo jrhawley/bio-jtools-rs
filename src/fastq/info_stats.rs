@@ -32,50 +32,6 @@ pub(crate) struct FastqStats {
 }
 
 impl FastqStats {
-    /// Process a single record from a FASTQ file to record its statistics
-    pub(crate) fn process_record(
-        &mut self,
-        rec: &Result<SequenceRecord, ParseError>,
-        opts: &FastqInfoOpts,
-    ) {
-        if let Ok(seq) = rec {
-            self.process_valid_record(seq, opts);
-        } else {
-            self.process_invalid_record();
-        }
-    }
-
-    /// Process the statistics for a valid record
-    fn process_valid_record(&mut self, seq: &SequenceRecord, opts: &FastqInfoOpts) {
-        self.valid_records += 1;
-
-        let seq_length: u64 = seq.num_bases().try_into().unwrap();
-        self.bases += seq_length;
-
-        if opts.lengths {
-            self.update_lengths(seq_length);
-        }
-        if opts.flow_cell_ids || opts.instruments {
-            let mut splits = seq.id().split(|x| *x == RNAME_SEPARATOR_ASCII_CODE);
-
-            match (splits.next(), splits.next(), splits.next()) {
-                (Some(_), Some(_), Some(_)) => self.process_sra_split_record(),
-                (Some(a), Some(_), None) => self.process_illumina_split_record(a, opts),
-                (Some(_), None, None) => self.process_illumina_pre_v1_8_split_record(),
-                _ => todo!(),
-            };
-        }
-    }
-
-    /// Update the information about the lengths of records
-    fn update_lengths(&mut self, seq_length: u64) {
-        if let Some(v) = self.lengths.get_mut(&seq_length) {
-            *v += 1;
-        } else {
-            self.lengths.insert(seq_length, 1);
-        }
-    }
-
     /// Process a Sequence Read Archive FASTQ record
     fn process_sra_split_record(&mut self) {
         // Sequence Read Archive ID will be ignored since there is no
@@ -147,7 +103,11 @@ impl FastqStats {
     }
 }
 
-impl RecordStats for FastqStats {
+impl<'a> RecordStats<'a> for FastqStats {
+    type Record = SequenceRecord<'a>;
+    type Error = ParseError;
+    type InfoOpts = FastqInfoOpts;
+
     /// Create a new set of statistics for a FASTQ file
     fn new() -> Self {
         FastqStats {
@@ -166,6 +126,31 @@ impl RecordStats for FastqStats {
 
     fn n_invalid(&self) -> u64 {
         self.invalid_records
+    }
+
+    fn mut_lengths(&mut self) -> &mut HashMap<u64, u64> {
+        &mut self.lengths
+    }
+
+    fn process_valid_record(&mut self, seq: &SequenceRecord, opts: &FastqInfoOpts) {
+        self.valid_records += 1;
+
+        let seq_length: u64 = seq.num_bases().try_into().unwrap();
+        self.bases += seq_length;
+
+        if opts.lengths {
+            self.update_lengths(seq_length);
+        }
+        if opts.flow_cell_ids || opts.instruments {
+            let mut splits = seq.id().split(|x| *x == RNAME_SEPARATOR_ASCII_CODE);
+
+            match (splits.next(), splits.next(), splits.next()) {
+                (Some(_), Some(_), Some(_)) => self.process_sra_split_record(),
+                (Some(a), Some(_), None) => self.process_illumina_split_record(a, opts),
+                (Some(_), None, None) => self.process_illumina_pre_v1_8_split_record(),
+                _ => todo!(),
+            };
+        }
     }
 
     fn process_invalid_record(&mut self) {
