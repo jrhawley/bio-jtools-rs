@@ -1,7 +1,40 @@
 //! Statistics for a SAM/BAM/CRAM file.
 
 use bam::RecordReader;
-use std::collections::{BTreeMap, HashSet};
+use std::{
+    collections::{BTreeMap, HashMap, HashSet},
+    io,
+};
+
+use super::SamBamCramInfoOpts;
+
+/// Important statistics from a SAM/BAM/CRAM file.
+#[derive(Debug)]
+pub struct SamBamCramStats {
+    /// Number of valid records.
+    valid_records: u64,
+
+    /// Number of invalid records.
+    invalid_records: u64,
+
+    /// Total number of bases from these alignments (multi-mapping reads are not double-counted).
+    bases: u64,
+
+    /// Length distribution of records
+    lengths: HashMap<u64, u64>,
+
+    /// Sequencing instruments
+    instruments: HashMap<String, u64>,
+
+    /// Flow cell IDs
+    flow_cell_ids: HashMap<String, u64>,
+
+    /// How deep the coverage is from these records.
+    genome_depth: (),
+
+    /// What amount of the genome is supported by these records.
+    genome_support: (),
+}
 
 /// Helper function for the most efficient looping over a SAM/BAM file
 fn count_info<T: RecordReader>(reader: &mut T) -> BTreeMap<String, String> {
