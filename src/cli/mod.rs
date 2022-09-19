@@ -1,6 +1,6 @@
 //! Command line interface options and parsing
 
-use crate::fastq::FastqInfoOpts;
+use crate::{align::SamBamCramInfoOpts, fastq::FastqInfoOpts};
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
@@ -39,8 +39,8 @@ pub(crate) enum InfoSubCmd {
     Fastq(FastqInfoOpts),
 
     /// Get info about a SAM/BAM/CRAM file
-    #[clap(visible_aliases = &["cram", "sam"])]
-    Bam,
+    #[clap(visible_aliases = &["sam", "cram"])]
+    Bam(SamBamCramInfoOpts),
 
     /// Get info about a BED file
     Bed,
