@@ -7,6 +7,7 @@ mod cli;
 mod data;
 mod fastq;
 mod interval;
+mod record;
 mod utils;
 
 use clap::Parser;
