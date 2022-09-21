@@ -1,13 +1,12 @@
 //! Statistics for a FASTQ file.
 
-use crate::record::stats::RecordStats;
-
-use super::{
+use super::FastqInfoOpts;
+use crate::record::{
     header::{ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE},
-    FastqInfoOpts,
+    stats::RecordStats,
 };
 use needletail::{errors::ParseError, parser::SequenceRecord};
-use std::{collections::HashMap, io::Read};
+use std::collections::HashMap;
 
 /// Statistics from a FASTQ file
 #[derive(Debug)]

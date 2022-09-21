@@ -1,6 +1,5 @@
 //! Process raw sequencing [FASTQ](https://en.wikipedia.org/wiki/FASTQ_format) files.
 
-pub(crate) mod header;
 pub(crate) mod info_stats;
 
 use self::info_stats::FastqStats;

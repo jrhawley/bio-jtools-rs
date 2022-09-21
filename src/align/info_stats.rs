@@ -1,7 +1,7 @@
 //! Statistics for a SAM/BAM/CRAM file.
 
 use crate::{
-    fastq::header::{ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE},
+    record::header::{ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE},
     record::stats::RecordStats,
 };
 use std::{collections::HashMap, io};
