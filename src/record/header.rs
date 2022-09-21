@@ -25,6 +25,17 @@ pub enum RecordName {
     SequenceReadArchive,
 }
 
+impl TryFrom<&[u8]> for RecordName {
+    type Error = RecordError;
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        if value[0..3] == SRA_RNAME_PREFIX[0..3] {
+            return Ok(RecordName::SequenceReadArchive);
+        } else {
+            return Ok(RecordName::CasavaV1_8);
+        }
+    }
+}
+
 /// FASTQ ID from Casava-processed files, version >=1.8
 #[derive(Debug)]
 pub(crate) struct CasavaV1_8Name {
@@ -62,4 +73,73 @@ pub(crate) struct SraName<'id> {
 
     /// Length of the record
     length: Cow<'id, [u8]>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[track_caller]
+    fn check_read_name_fmt(rname: &str, exp: Result<RecordName, RecordError>) {
+        let rname_bytes = rname.as_bytes();
+        let obs = RecordName::try_from(rname_bytes);
+
+        assert_eq!(obs, exp);
+    }
+
+    #[test]
+    fn casavav1_is_casava() {
+        let rname = "HWUSI-EAS100R:6:73:941:1973#0/1";
+
+        check_read_name_fmt(rname, Ok(RecordName::CasavaV1_8));
+    }
+
+    #[test]
+    fn casavav1_4_is_casava() {
+        let rname = "HWUSI-EAS100R:6:73:941:1973#ACTAGC/1";
+
+        check_read_name_fmt(rname, Ok(RecordName::CasavaV1_8));
+    }
+
+    #[test]
+    fn casavav1_8_is_casava() {
+        let rname = "EAS139:136:FC706VJ:2:2104:15343:197393 1:Y:18:ATCACG";
+
+        check_read_name_fmt(rname, Ok(RecordName::CasavaV1_8));
+    }
+
+    #[test]
+    fn casavav1_8_without_sample_index_is_casava() {
+        let rname = "EAS139:136:FC706VJ:2:2104:15343:197393 1:Y:18:1";
+
+        check_read_name_fmt(rname, Ok(RecordName::CasavaV1_8));
+    }
+
+    #[test]
+    fn srr_is_sra() {
+        let rname = "SRR001666.1 071112_SLXA-EAS1_s_7:5:1:817:345 length=36";
+
+        check_read_name_fmt(rname, Ok(RecordName::SequenceReadArchive));
+    }
+
+    #[test]
+    fn srr_without_original_info_is_sra() {
+        let rname = "SRR001666.1 length=36";
+
+        check_read_name_fmt(rname, Ok(RecordName::SequenceReadArchive));
+    }
+
+    #[test]
+    fn srr_without_original_info_nor_length_is_sra() {
+        let rname = "SRR001666.1";
+
+        check_read_name_fmt(rname, Ok(RecordName::SequenceReadArchive));
+    }
+
+    #[test]
+    fn srr_in_origfmt_is_casava() {
+        let rname = "071112_SLXA-EAS1_s_7:5:1:817:345";
+
+        check_read_name_fmt(rname, Ok(RecordName::CasavaV1_8));
+    }
 }
