@@ -2,7 +2,7 @@
 
 use crate::{
     record::header::{ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE},
-    record::stats::RecordStats,
+    record::{error::RecordError, header::RecordName, stats::RecordStats},
 };
 use std::{collections::HashMap, io};
 
@@ -110,14 +110,17 @@ impl<'a> RecordStats<'a> for SamBamCramStats {
         }
 
         if opts.flow_cell_ids || opts.instruments {
-            let mut splits = seq.name().split(|x| *x == RNAME_SEPARATOR_ASCII_CODE);
-
-            match (splits.next(), splits.next(), splits.next()) {
-                (Some(_), Some(_), Some(_)) => self.process_sra_split_record(),
-                (Some(a), Some(_), None) => self.process_illumina_split_record(a, opts),
-                (Some(_), None, None) => self.process_illumina_pre_v1_8_split_record(),
-                _ => todo!(),
-            };
+            match RecordName::try_from(seq.name()) {
+                Ok(RecordName::CasavaV1_8) => {
+                    let mut splits = seq.name().split(|x| *x == RNAME_SEPARATOR_ASCII_CODE);
+                    let a = splits.next().unwrap();
+                    self.process_illumina_split_record(a, opts);
+                }
+                Ok(RecordName::SequenceReadArchive) => {
+                    self.process_sra_split_record();
+                }
+                Err(RecordError::UncertainRecordNameFormat) => todo!(),
+            }
         }
     }
 

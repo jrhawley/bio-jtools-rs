@@ -2,7 +2,8 @@
 
 use super::FastqInfoOpts;
 use crate::record::{
-    header::{ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE},
+    error::RecordError,
+    header::{RecordName, ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE},
     stats::RecordStats,
 };
 use needletail::{errors::ParseError, parser::SequenceRecord};
@@ -100,14 +101,19 @@ impl<'a> RecordStats<'a> for FastqStats {
             self.update_lengths(seq_length);
         }
         if opts.flow_cell_ids || opts.instruments {
-            let mut splits = seq.id().split(|x| *x == RNAME_SEPARATOR_ASCII_CODE);
-
-            match (splits.next(), splits.next(), splits.next()) {
-                (Some(_), Some(_), Some(_)) => self.process_sra_split_record(),
-                (Some(a), Some(_), None) => self.process_illumina_split_record(a, opts),
-                (Some(_), None, None) => self.process_illumina_pre_v1_8_split_record(),
-                _ => todo!(),
-            };
+            if opts.flow_cell_ids || opts.instruments {
+                match RecordName::try_from(seq.id()) {
+                    Ok(RecordName::CasavaV1_8) => {
+                        let mut splits = seq.id().split(|x| *x == RNAME_SEPARATOR_ASCII_CODE);
+                        let a = splits.next().unwrap();
+                        self.process_illumina_split_record(a, opts);
+                    }
+                    Ok(RecordName::SequenceReadArchive) => {
+                        self.process_sra_split_record();
+                    }
+                    Err(RecordError::UncertainRecordNameFormat) => todo!(),
+                }
+            }
         }
     }
 
