@@ -1,13 +1,85 @@
 //! Statistics for a FASTQ file.
 
-use super::FastqInfoOpts;
-use crate::record::{
-    error::RecordError,
-    header::{RecordName, ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE},
-    stats::RecordStats,
+use crate::{
+    cli::CliOpt,
+    record::{
+        error::RecordError,
+        header::{RecordName, ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE},
+        stats::RecordStats,
+    },
+    utils::{formats::OutputFormat, Fastx, Hts, HtsFile},
 };
+use clap::Parser;
+use needletail::parse_fastx_file;
 use needletail::{errors::ParseError, parser::SequenceRecord};
 use std::collections::HashMap;
+use std::path::PathBuf;
+
+/// CLI options for getting info from an HTS file
+#[derive(Debug, Parser)]
+pub(crate) struct FastqInfoOpts {
+    /// Get info about this HTS file
+    #[clap(name = "HTS")]
+    hts_path: PathBuf,
+
+    /// Count the total number of records
+    #[clap(short, long)]
+    total: bool,
+
+    /// Track the frequency of sequence lengths
+    #[clap(short, long)]
+    lengths: bool,
+
+    /// Track the sequencing instruments used (only valid for FASTQ, SAM, BAM, and CRAM files)
+    #[clap(short, long)]
+    instruments: bool,
+
+    /// Track flow cell IDs
+    #[clap(short = 'F', long)]
+    flow_cell_ids: bool,
+
+    /// Output format to return statistics in
+    #[clap(short = 'f', long, default_value = "human")]
+    format: OutputFormat,
+
+    /// Keep statistics on the first N records
+    #[clap(short = 'N', long = "max-records", name = "N")]
+    n_max_records: Option<u64>,
+}
+
+impl FastqInfoOpts {
+    /// Get information and statistics about a desired FASTQ file
+    fn calc_fastq_info(&self, hts: HtsFile) -> FastqStats {
+        let mut stats = FastqStats::new();
+        let mut reader = parse_fastx_file(hts.path()).expect("Error opening HTS file");
+
+        if let Some(n_max) = self.n_max_records {
+            // check if the max capacity has been hit
+            while let (true, Some(record)) = (stats.n_records() < n_max, reader.next()) {
+                stats.process_record(&record, self);
+            }
+        } else {
+            while let Some(record) = reader.next() {
+                stats.process_record(&record, self);
+            }
+        }
+
+        stats
+    }
+}
+
+impl CliOpt for FastqInfoOpts {
+    fn exec(&self) {
+        let hts = HtsFile::new(&self.hts_path);
+        match hts.filetype() {
+            Hts::Fastx(Fastx::Fastq) => {
+                let stats = self.calc_fastq_info(hts);
+                println!("{:#?}", stats);
+            }
+            _ => todo!(),
+        }
+    }
+}
 
 /// Statistics from a FASTQ file
 #[derive(Debug)]
