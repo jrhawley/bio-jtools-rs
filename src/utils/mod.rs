@@ -146,7 +146,7 @@ impl HtsFile {
                 let mut writer = SamWriter::from_path(out, reader.header().clone()).unwrap();
                 align::filter::filter(&mut reader, ids, &mut writer, keep)
             }
-            (Hts::Fastx(_), Some(Hts::Fastx(_))) => fastq::filter(self, ids, out, keep),
+            (Hts::Fastx(_), Some(Hts::Fastx(_))) => fastq::filter::filter(self, ids, out, keep),
             _ => unimplemented!(),
         }
     }

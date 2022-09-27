@@ -1,11 +1,21 @@
 //! Filter alignments in a SAM/BAM/CRAM file.
 
+use bam::{Record, RecordReader, RecordWriter};
+use clap::Parser;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::str::from_utf8;
 
-use bam::{Record, RecordReader, RecordWriter};
+use crate::cli::CliOpt;
+
+/// Options for filtering alignments from a SAM/BAM/CRAM file.
+#[derive(Debug, Parser)]
+pub struct SamBamCramFilterOpts {}
+
+impl CliOpt for SamBamCramFilterOpts {
+    fn exec(&self) {}
+}
 
 /// Filter out reads according to a list of IDs
 /// Assumes a sorted SAM/BAM file and a sorted list of IDs

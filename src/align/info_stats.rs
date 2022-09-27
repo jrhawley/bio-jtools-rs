@@ -1,12 +1,107 @@
 //! Statistics for a SAM/BAM/CRAM file.
 
+use super::reader::SamBamCramReader;
 use crate::{
-    fastq::header::{ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE},
-    record::stats::RecordStats,
+    cli::CliOpt,
+    record::header::{ILLUMINA_SEPARATOR_ASCII_CODE, RNAME_SEPARATOR_ASCII_CODE},
+    record::{error::RecordError, header::RecordName, stats::RecordStats},
+    utils::{formats::OutputFormat, Align, Hts, HtsFile},
 };
+use bam::{BamReader, SamReader};
+use clap::Parser;
+use std::path::PathBuf;
 use std::{collections::HashMap, io};
 
-use super::SamBamCramInfoOpts;
+/// CLI options for getting info from an HTS file
+#[derive(Debug, Parser)]
+pub struct SamBamCramInfoOpts {
+    /// Get info about this HTS file
+    #[clap(name = "HTS")]
+    hts_path: PathBuf,
+
+    /// Count the total number of records
+    #[clap(short, long)]
+    total: bool,
+
+    /// Track the frequency of sequence lengths
+    #[clap(short, long)]
+    lengths: bool,
+
+    /// Track the sequencing instruments used
+    #[clap(short, long)]
+    instruments: bool,
+
+    /// Track flow cell IDs
+    #[clap(short = 'F', long)]
+    flow_cell_ids: bool,
+
+    /// Output format to return statistics in
+    #[clap(short = 'f', long, default_value = "human")]
+    format: OutputFormat,
+
+    /// Keep statistics on the first N records
+    #[clap(short = 'N', long = "max-records", name = "N")]
+    n_max_records: Option<u64>,
+}
+
+impl SamBamCramInfoOpts {
+    /// Get information and statistics about a desired FASTQ file
+    fn calc_info(&self, hts: HtsFile) -> SamBamCramStats {
+        let mut stats = SamBamCramStats::new();
+        let reader_wrapper = match hts.filetype() {
+            Hts::Align(Align::Sam) => SamBamCramReader::Sam(
+                SamReader::from_path(hts.path()).expect("Error opening SAM file."),
+            ),
+            Hts::Align(Align::Bam) => SamBamCramReader::Bam(
+                BamReader::from_path(hts.path(), 3).expect("Error opening BAM file."),
+            ),
+            Hts::Align(Align::Cram) => {
+                todo!()
+            }
+            _ => todo!(),
+        };
+
+        match reader_wrapper {
+            SamBamCramReader::Bam(mut reader) => {
+                if let Some(n_max) = self.n_max_records {
+                    // check if the max capacity has been hit
+                    while let (true, Some(record)) = (stats.n_records() < n_max, reader.next()) {
+                        stats.process_record(&record, self);
+                    }
+                } else {
+                    while let Some(record) = reader.next() {
+                        stats.process_record(&record, self);
+                    }
+                }
+            }
+            SamBamCramReader::Sam(mut reader) => {
+                if let Some(n_max) = self.n_max_records {
+                    // check if the max capacity has been hit
+                    while let (true, Some(record)) = (stats.n_records() < n_max, reader.next()) {
+                        stats.process_record(&record, self);
+                    }
+                } else {
+                    while let Some(record) = reader.next() {
+                        stats.process_record(&record, self);
+                    }
+                }
+            }
+            SamBamCramReader::Cram => {
+                todo!()
+            }
+        }
+
+        stats
+    }
+}
+
+impl CliOpt for SamBamCramInfoOpts {
+    fn exec(&self) {
+        let hts = HtsFile::new(&self.hts_path);
+        let stats = self.calc_info(hts);
+        println!("{:#?}", stats);
+    }
+}
 
 /// Important statistics from a SAM/BAM/CRAM file.
 #[derive(Debug)]
@@ -110,14 +205,17 @@ impl<'a> RecordStats<'a> for SamBamCramStats {
         }
 
         if opts.flow_cell_ids || opts.instruments {
-            let mut splits = seq.name().split(|x| *x == RNAME_SEPARATOR_ASCII_CODE);
-
-            match (splits.next(), splits.next(), splits.next()) {
-                (Some(_), Some(_), Some(_)) => self.process_sra_split_record(),
-                (Some(a), Some(_), None) => self.process_illumina_split_record(a, opts),
-                (Some(_), None, None) => self.process_illumina_pre_v1_8_split_record(),
-                _ => todo!(),
-            };
+            match RecordName::try_from(seq.name()) {
+                Ok(RecordName::CasavaV1_8) => {
+                    let mut splits = seq.name().split(|x| *x == RNAME_SEPARATOR_ASCII_CODE);
+                    let a = splits.next().unwrap();
+                    self.process_illumina_split_record(a, opts);
+                }
+                Ok(RecordName::SequenceReadArchive) => {
+                    self.process_sra_split_record();
+                }
+                Err(RecordError::UncertainRecordNameFormat) => todo!(),
+            }
         }
     }
 
