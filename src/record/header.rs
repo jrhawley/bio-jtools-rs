@@ -30,8 +30,10 @@ impl TryFrom<&[u8]> for RecordName {
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         if value[0..3] == SRA_RNAME_PREFIX[0..3] {
             return Ok(RecordName::SequenceReadArchive);
-        } else {
+        } else if value.contains(&ILLUMINA_SEPARATOR_ASCII_CODE) {
             return Ok(RecordName::CasavaV1_8);
+        } else {
+            return Err(RecordError::UncertainRecordNameFormat);
         }
     }
 }
@@ -141,5 +143,12 @@ mod tests {
         let rname = "071112_SLXA-EAS1_s_7:5:1:817:345";
 
         check_read_name_fmt(rname, Ok(RecordName::CasavaV1_8));
+    }
+
+    #[test]
+    fn err_in_read_name() {
+        let rname = "this+shouldn't_return/a*value";
+
+        check_read_name_fmt(rname, Err(RecordError::UncertainRecordNameFormat));
     }
 }
