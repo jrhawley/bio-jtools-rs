@@ -17,23 +17,8 @@ fn main() {
     let args = Cli::parse();
 
     match args.cmd {
-        SubCmd::Info(hts) => match hts {
-            InfoSubCmd::Bam(opts) => {
-                opts.exec();
-            }
-            InfoSubCmd::Bed => {
-                todo!()
-            }
-            InfoSubCmd::Fasta => {
-                todo!()
-            }
-            InfoSubCmd::Fastq(opts) => {
-                opts.exec();
-            }
-        },
-        SubCmd::Filter => {
-            todo!()
-        }
+        SubCmd::Info(info_opts) => info_opts.exec(),
+        SubCmd::Filter(filter_opts) => filter_opts.exec(),
         SubCmd::Organize => {
             todo!()
         }

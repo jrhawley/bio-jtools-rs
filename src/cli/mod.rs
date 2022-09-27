@@ -1,6 +1,9 @@
 //! Command line interface options and parsing
 
-use crate::{align::SamBamCramInfoOpts, fastq::FastqInfoOpts};
+use crate::{
+    align::{filter::SamBamCramFilterOpts, info_stats::SamBamCramInfoOpts},
+    fastq::{filter::FastqFilterOpts, info_stats::FastqInfoOpts},
+};
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
@@ -15,8 +18,8 @@ pub(crate) enum SubCmd {
     #[clap(subcommand)]
     Info(InfoSubCmd),
 
-    /// Filter an HTS file by its query names
-    Filter,
+    #[clap(subcommand)]
+    Filter(FilterSubCmd),
 
     /// Organize a batch of raw sequencing data
     #[clap(name = "org")]
@@ -45,3 +48,49 @@ pub(crate) enum InfoSubCmd {
     /// Get info about a BED file
     Bed,
 }
+
+impl CliOpt for InfoSubCmd {
+    fn exec(&self) {
+        match self {
+            Self::Fasta => todo!(),
+            Self::Fastq(opts) => opts.exec(),
+            Self::Bam(opts) => opts.exec(),
+            Self::Bed => todo!(),
+        }
+    }
+}
+
+/// Filter an HTS file by its records' properties
+#[derive(Debug, Subcommand)]
+pub(crate) enum FilterSubCmd {
+    /// Filter a FASTA file
+    #[clap(visible_alias = "fa")]
+    Fasta,
+
+    /// Filter a FASTQ file
+    #[clap(visible_alias = "fq")]
+    Fastq(FastqFilterOpts),
+
+    /// Filter a SAM/BAM/CRAM file
+    #[clap(visible_aliases = &["sam", "cram"])]
+    Bam(SamBamCramFilterOpts),
+
+    /// Filter a BED file
+    Bed,
+}
+
+impl CliOpt for FilterSubCmd {
+    fn exec(&self) {
+        match self {
+            Self::Fasta => todo!(),
+            Self::Fastq(opts) => opts.exec(),
+            Self::Bam(opts) => opts.exec(),
+            Self::Bed => todo!(),
+        }
+    }
+}
+
+// /// * hts: HtsFile for a name-sorted FASTA file. Sort with `(z)cat | paste | sort -n`
+// /// * ids: A name-sorted file containing IDs to filter out (or keep) from the Fastx file. Sort with `sort ids.in > ids.filtered.out`.
+// /// * out: Output file to write filtered reads to
+// /// * keep: Boolean to keep the reads matching IDs in `ids` (`true`) or discard them (`false`)
