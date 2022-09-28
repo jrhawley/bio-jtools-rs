@@ -6,13 +6,33 @@ use needletail::parse_fastx_file;
 use std::{
     fs::File,
     io::{BufRead, BufReader, BufWriter},
-    path::Path,
+    path::{Path, PathBuf},
     str::from_utf8,
 };
 
 /// Options for filtering reads from a FASTQ file.
 #[derive(Debug, Parser)]
-pub struct FastqFilterOpts {}
+pub struct FastqFilterOpts {
+    /// Get info about this HTS file.
+    #[clap(name = "HTS")]
+    hts_path: PathBuf,
+
+    /// Regular expression to match against the read names.
+    #[clap(short, long)]
+    regex: Option<String>,
+
+    /// Text file containing all read names to filter.
+    #[clap(short = 'f', long = "id-file", name = "FILE")]
+    id_list_path: Option<PathBuf>,
+
+    /// Output file name.
+    #[clap(short, long)]
+    output: PathBuf,
+
+    /// Keep the records that match, instead of discarding them.
+    #[clap(short, long)]
+    keep: bool,
+}
 
 impl CliOpt for FastqFilterOpts {
     fn exec(&self) {}

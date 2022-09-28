@@ -4,14 +4,34 @@ use bam::{Record, RecordReader, RecordWriter};
 use clap::Parser;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::str::from_utf8;
 
 use crate::cli::CliOpt;
 
 /// Options for filtering alignments from a SAM/BAM/CRAM file.
 #[derive(Debug, Parser)]
-pub struct SamBamCramFilterOpts {}
+pub struct SamBamCramFilterOpts {
+    /// Get info about this HTS file.
+    #[clap(name = "HTS")]
+    hts_path: PathBuf,
+
+    /// Regular expression to match against the read names.
+    #[clap(short, long)]
+    regex: Option<String>,
+
+    /// Text file containing all read names to filter.
+    #[clap(short = 'f', long = "id-file", name = "FILE")]
+    id_list_path: Option<PathBuf>,
+
+    /// Output file name.
+    #[clap(short, long)]
+    output: PathBuf,
+
+    /// Keep the records that match, instead of discarding them.
+    #[clap(short, long)]
+    keep: bool,
+}
 
 impl CliOpt for SamBamCramFilterOpts {
     fn exec(&self) {}
