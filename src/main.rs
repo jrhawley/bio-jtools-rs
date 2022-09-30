@@ -11,9 +11,9 @@ mod record;
 mod utils;
 
 use clap::Parser;
-use cli::{Cli, CliOpt, InfoSubCmd, SubCmd};
+use cli::{Cli, CliOpt, SubCmd};
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     let args = Cli::parse();
 
     match args.cmd {

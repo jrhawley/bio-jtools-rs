@@ -11,7 +11,7 @@ pub enum OutputFormatError {
     UnknownFormat(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum OutputFormat {
     HumanReadable,
     Csv,

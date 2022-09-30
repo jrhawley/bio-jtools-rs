@@ -40,7 +40,7 @@ pub struct SamBamCramInfoOpts {
     format: OutputFormat,
 
     /// Keep statistics on the first N records
-    #[clap(short = 'N', long = "max-records", name = "N")]
+    #[clap(short = 'N', long = "max-records", value_name = "N")]
     n_max_records: Option<u64>,
 }
 
@@ -96,10 +96,12 @@ impl SamBamCramInfoOpts {
 }
 
 impl CliOpt for SamBamCramInfoOpts {
-    fn exec(&self) {
+    fn exec(&self) -> anyhow::Result<()> {
         let hts = HtsFile::new(&self.hts_path);
         let stats = self.calc_info(hts);
         println!("{:#?}", stats);
+
+        Ok(())
     }
 }
 

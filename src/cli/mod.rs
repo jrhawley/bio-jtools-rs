@@ -27,7 +27,9 @@ pub(crate) enum SubCmd {
 }
 
 pub(crate) trait CliOpt {
-    fn exec(&self);
+    fn exec(&self) -> anyhow::Result<()> {
+        Ok(())
+    }
 }
 
 /// Collect information and calculate statistics about an HTS file
@@ -50,7 +52,7 @@ pub(crate) enum InfoSubCmd {
 }
 
 impl CliOpt for InfoSubCmd {
-    fn exec(&self) {
+    fn exec(&self) -> anyhow::Result<()> {
         match self {
             Self::Fasta => todo!(),
             Self::Fastq(opts) => opts.exec(),
@@ -80,7 +82,7 @@ pub(crate) enum FilterSubCmd {
 }
 
 impl CliOpt for FilterSubCmd {
-    fn exec(&self) {
+    fn exec(&self) -> anyhow::Result<()> {
         match self {
             Self::Fasta => todo!(),
             Self::Fastq(opts) => opts.exec(),
@@ -89,8 +91,3 @@ impl CliOpt for FilterSubCmd {
         }
     }
 }
-
-// /// * hts: HtsFile for a name-sorted FASTA file. Sort with `(z)cat | paste | sort -n`
-// /// * ids: A name-sorted file containing IDs to filter out (or keep) from the Fastx file. Sort with `sort ids.in > ids.filtered.out`.
-// /// * out: Output file to write filtered reads to
-// /// * keep: Boolean to keep the reads matching IDs in `ids` (`true`) or discard them (`false`)

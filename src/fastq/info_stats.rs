@@ -43,7 +43,7 @@ pub(crate) struct FastqInfoOpts {
     format: OutputFormat,
 
     /// Keep statistics on the first N records
-    #[clap(short = 'N', long = "max-records", name = "N")]
+    #[clap(short = 'N', long = "max-records", value_name = "N")]
     n_max_records: Option<u64>,
 }
 
@@ -69,7 +69,7 @@ impl FastqInfoOpts {
 }
 
 impl CliOpt for FastqInfoOpts {
-    fn exec(&self) {
+    fn exec(&self) -> anyhow::Result<()> {
         let hts = HtsFile::new(&self.hts_path);
         match hts.filetype() {
             Hts::Fastx(Fastx::Fastq) => {
@@ -78,6 +78,8 @@ impl CliOpt for FastqInfoOpts {
             }
             _ => todo!(),
         }
+
+        Ok(())
     }
 }
 

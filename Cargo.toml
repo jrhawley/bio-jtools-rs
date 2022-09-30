@@ -19,7 +19,7 @@ include = [
 [dependencies]
 bam = "0.1"
 chrono = "0.4"
-clap = { version = "3", features = ["derive", "regex"] }
+clap = { version = "4", features = ["derive"] }
 clap-verbosity-flag = "1.0.0"
 flate2 = "1"
 indoc = "0.3"
@@ -30,6 +30,7 @@ rust-lapper = "0.4.4"
 regex = "1"
 walkdir = "2.3"
 thiserror = "1.0.31"
+anyhow = "1.0.65"
 
 [[bin]]
 name = "bjt"
