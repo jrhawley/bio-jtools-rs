@@ -4,6 +4,7 @@ use crate::{cli::CliOpt, utils::HtsFile};
 use anyhow::bail;
 use clap::Parser;
 use needletail::parse_fastx_file;
+use regex::Regex;
 use std::{
     fs::File,
     io::{BufRead, BufReader, BufWriter},
@@ -30,7 +31,7 @@ pub struct FastqFilterOpts {
 
     /// Regular expression to match against the read names.
     #[clap(short, long, conflicts_with = "id_list_path")]
-    regex: Option<String>,
+    regex: Option<Regex>,
 
     /// Text file containing all read names to filter.
     #[clap(

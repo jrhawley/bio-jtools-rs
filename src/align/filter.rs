@@ -2,6 +2,7 @@
 
 use bam::{Record, RecordReader, RecordWriter};
 use clap::Parser;
+use regex::Regex;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
@@ -18,7 +19,7 @@ pub struct SamBamCramFilterOpts {
 
     /// Regular expression to match against the read names.
     #[clap(short, long, conflicts_with = "id_list_path")]
-    regex: Option<String>,
+    regex: Option<Regex>,
 
     /// Text file containing all read names to filter.
     #[clap(
