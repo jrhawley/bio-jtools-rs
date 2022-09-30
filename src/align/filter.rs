@@ -21,7 +21,7 @@ pub struct SamBamCramFilterOpts {
     regex: Option<String>,
 
     /// Text file containing all read names to filter.
-    #[clap(short = 'f', long = "id-file", name = "FILE")]
+    #[clap(short = 'f', long = "id-file", value_name = "FILE")]
     id_list_path: Option<PathBuf>,
 
     /// Output file name.
@@ -33,9 +33,7 @@ pub struct SamBamCramFilterOpts {
     keep: bool,
 }
 
-impl CliOpt for SamBamCramFilterOpts {
-    fn exec(&self) {}
-}
+impl CliOpt for SamBamCramFilterOpts {}
 
 /// Filter out reads according to a list of IDs
 /// Assumes a sorted SAM/BAM file and a sorted list of IDs
