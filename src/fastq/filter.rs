@@ -1,6 +1,7 @@
 //! Filter out reads from a FASTQ file.
 
 use crate::{cli::CliOpt, utils::HtsFile};
+use anyhow::bail;
 use clap::Parser;
 use needletail::parse_fastx_file;
 use std::{
@@ -9,6 +10,16 @@ use std::{
     path::{Path, PathBuf},
     str::from_utf8,
 };
+use thiserror::Error;
+
+#[derive(Debug, Error, PartialEq)]
+pub enum FastqFilterError {
+    #[error("Cannot specify both a regular expression and a file with exact IDs.")]
+    CannotSpecifyRegexAndIdFile,
+
+    #[error("You must filter against something, like a regular expression or file containing exact IDs.")]
+    FilterCannotBeEmpty,
+}
 
 /// Options for filtering reads from a FASTQ file.
 #[derive(Debug, Parser)]
@@ -40,7 +51,39 @@ pub struct FastqFilterOpts {
 }
 
 impl CliOpt for FastqFilterOpts {
-    fn exec(&self) {}
+    fn exec(&self) -> anyhow::Result<()> {
+        match (self.regex.is_some(), self.id_list_path.is_some()) {
+            (true, true) => {
+                // this should be excluded by the CLI
+                bail!(FastqFilterError::CannotSpecifyRegexAndIdFile)
+            }
+            (true, false) => self.filter_with_id_regex(),
+            (false, true) => self.filter_with_id_file(),
+            (false, false) => bail!(FastqFilterError::FilterCannotBeEmpty),
+        }
+    }
+}
+
+impl FastqFilterOpts {
+    /// Filter out records using a sorted ID file to match against.
+    fn filter_with_id_file(&self) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    /// Filter out records using a regular expression to match against record IDs.
+    fn filter_with_id_regex(&self) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    /// Filter out records containing a provided sequence.
+    fn filter_seq(&self) -> anyhow::Result<()> {
+        Ok(())
+    }
+
+    /// Filter out records based on its quality scores.
+    fn filter_qual(&self) -> anyhow::Result<()> {
+        Ok(())
+    }
 }
 
 /// Filter out reads according to a list of IDs
