@@ -43,7 +43,7 @@ pub struct FastqFilterOpts {
 
     /// Output file name.
     #[clap(short, long)]
-    output: PathBuf,
+    output: Option<PathBuf>,
 
     /// Keep the records that match, instead of discarding them.
     #[clap(short, long)]
