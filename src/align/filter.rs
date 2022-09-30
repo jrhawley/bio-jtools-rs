@@ -17,11 +17,16 @@ pub struct SamBamCramFilterOpts {
     hts_path: PathBuf,
 
     /// Regular expression to match against the read names.
-    #[clap(short, long)]
+    #[clap(short, long, conflicts_with = "id_list_path")]
     regex: Option<String>,
 
     /// Text file containing all read names to filter.
-    #[clap(short = 'f', long = "id-file", value_name = "FILE")]
+    #[clap(
+        short = 'f',
+        long = "id-file",
+        value_name = "FILE",
+        conflicts_with = "regex"
+    )]
     id_list_path: Option<PathBuf>,
 
     /// Output file name.
