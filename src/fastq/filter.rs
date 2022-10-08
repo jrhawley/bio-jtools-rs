@@ -66,6 +66,14 @@ impl CliOpt for FastqFilterOpts {
 }
 
 impl FastqFilterOpts {
+    /// Return what type of writer to use here (STDOUT, a file, or something else)
+    fn writer_output(&self) -> Result<Box<dyn Write>, io::Error> {
+        match self.output {
+            Some(ref path) => File::open(path).map(|f| Box::new(f) as Box<dyn Write>),
+            None => Ok(Box::new(io::stdout())),
+        }
+    }
+
     /// Filter out records using a sorted ID file to match against.
     fn filter_with_id_file(&self) -> anyhow::Result<()> {
         Ok(())
