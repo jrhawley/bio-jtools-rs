@@ -36,3 +36,9 @@ features = ["color"]
 name = "bjt"
 path = "src/main.rs"
 
+[build-dependencies]
+cargo-make = "0.36.1"
+
+[dev-dependencies]
+cargo-nextest = "0.9.38"
+

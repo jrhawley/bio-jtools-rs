@@ -1,0 +1,179 @@
+[tasks.release-all]
+dependencies = [
+	"release-linux",
+	"release-windows",
+	"release-macos",
+]
+
+[tasks.release]
+linux_alias = "release-linux"
+windows_alias = "release-windows"
+mac_alias = "release-macos"
+
+[tasks.release-windows]
+dependencies = [
+	"zip-windows"
+]
+command = "gh"
+args = [
+	"release",
+	"upload",
+	"--clobber",
+	"v${CARGO_MAKE_PROJECT_VERSION}",
+	"target/x86_64-pc-windows-gnu/release/${CARGO_MAKE_PROJECT_NAME}_v${CARGO_MAKE_PROJECT_VERSION}_x86_64-pc-windows-gnu.zip",
+]
+
+[tasks.release-macos]
+dependencies = [
+	"zip-macos"
+]
+command = "gh"
+args = [
+	"release",
+	"upload",
+	"--clobber",
+	"v${CARGO_MAKE_PROJECT_VERSION}",
+	"target/x86_64-apple-darwin/release/${CARGO_MAKE_PROJECT_NAME}_v${CARGO_MAKE_PROJECT_VERSION}_x86_64-apple-darwin.zip",
+]
+
+[tasks.release-linux]
+dependencies = [
+	"zip-linux"
+]
+command = "gh"
+args = [
+	"release",
+	"upload",
+	"--clobber",
+	"v${CARGO_MAKE_PROJECT_VERSION}",
+	"target/x86_64-unknown-linux-gnu/release/${CARGO_MAKE_PROJECT_NAME}_v${CARGO_MAKE_PROJECT_VERSION}_x86_64-unknown-linux-gnu.zip",
+]
+
+[tasks.zip-all]
+dependencies = [
+	"zip-windows",
+	"zip-macos",
+	"zip-linux",
+]
+
+[tasks.zip]
+linux_alias = "zip-linux"
+windows_alias = "zip-windows"
+mac_alias = "zip-macos"
+
+[tasks.zip-windows]
+dependencies = [
+	"build-release-windows",
+	"clean-zip-windows",
+]
+command = "7z"
+args = [
+	"a",
+	"target/x86_64-pc-windows-gnu/release/${CARGO_MAKE_PROJECT_NAME}_v${CARGO_MAKE_PROJECT_VERSION}_x86_64-pc-windows-gnu.zip",
+	"./target/x86_64-pc-windows-gnu/release/bjt.exe",
+]
+
+
+[tasks.zip-macos]
+dependencies = [
+	"build-release-macos",
+	"clean-zip-macos",
+]
+command = "7z"
+args = [
+	"a",
+	"target/x86_64-apple-darwin/release/${CARGO_MAKE_PROJECT_NAME}_v${CARGO_MAKE_PROJECT_VERSION}_x86_64-apple-darwin.zip",
+	"./target/x86_64-apple-darwin/release/bjt",
+]
+
+[tasks.zip-linux]
+dependencies = [
+	"build-release-linux",
+	"clean-zip-linux",
+]
+command = "7z"
+args = [
+	"a",
+	"target/x86_64-unknown-linux-gnu/release/${CARGO_MAKE_PROJECT_NAME}_v${CARGO_MAKE_PROJECT_VERSION}_x86_64-unknown-linux-gnu.zip",
+	"./target/x86_64-unknown-linux-gnu/release/bjt",
+]
+
+
+[tasks.build-release-all]
+dependencies = [
+	"build-release-windows",
+	"build-release-macos",
+	"build-release-linux",
+]
+
+[tasks.build-release]
+linux_alias = "build-release-linux"
+windows_alias = "build-release-windows"
+mac_alias = "build-release-macos"
+
+[tasks.build-release-windows]
+command = "cargo"
+args = [
+	"build",
+	"--release",
+	"--target",
+	"x86_64-pc-windows-gnu",
+]
+
+[tasks.build-release-macos]
+command = "cargo"
+args = [
+	"build",
+	"--release",
+	"--target",
+	"x86_64-apple-darwin",
+]
+
+[tasks.build-release-linux]
+command = "cargo"
+args = [
+	"build",
+	"--release",
+	"--target",
+	"x86_64-unknown-linux-gnu",
+]
+
+[tasks.clean]
+command = "cargo"
+args = ["clean"]
+
+[tasks.clean-zip-windows]
+condition = {files_exist = ["target/x86_64-pc-windows-gnu/release/${CARGO_MAKE_PROJECT_NAME}_v${CARGO_MAKE_PROJECT_VERSION}_x86_64-pc-windows-gnu.zip"]}
+command = "rm"
+args = [
+	"-f",
+	"target/x86_64-pc-windows-gnu/release/${CARGO_MAKE_PROJECT_NAME}_v${CARGO_MAKE_PROJECT_VERSION}_x86_64-pc-windows-gnu.zip",
+]
+
+[tasks.clean-zip-macos]
+condition = {files_exist = ["target/x86_64-apple-darwin/release/${CARGO_MAKE_PROJECT_NAME}_v${CARGO_MAKE_PROJECT_VERSION}_x86_64-apple-darwin.zip"] }
+command = "rm"
+args = [
+	"-f",
+	"target/x86_64-apple-darwin/release/${CARGO_MAKE_PROJECT_NAME}_v${CARGO_MAKE_PROJECT_VERSION}_x86_64-apple-darwin.zip",
+]
+
+[tasks.clean-zip-linux]
+condition = {files_exist = ["target/x86_64-unknown-linux-gnu/release/${CARGO_MAKE_PROJECT_NAME}_v${CARGO_MAKE_PROJECT_VERSION}_x86_64-unknown-linux-gnu.zip"] }
+command = "rm"
+args = [
+	"-f",
+	"target/x86_64-unknown-linux-gnu/release/${CARGO_MAKE_PROJECT_NAME}_v${CARGO_MAKE_PROJECT_VERSION}_x86_64-unknown-linux-gnu.zip",
+]
+
+[tasks.build]
+command = "cargo"
+args = ["build"]
+
+[tasks.test]
+command = "cargo"
+args = [
+	"nextest",
+	"run",
+]
+
