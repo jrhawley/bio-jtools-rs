@@ -1,93 +1,10 @@
 //! Filter out reads from a FASTQ file.
 
 pub mod error;
+pub mod opts;
 
 pub use error::FastqFilterError;
-
-use crate::{cli::CliOpt, utils::HtsFile};
-use anyhow::bail;
-use clap::Parser;
-use needletail::parse_fastx_file;
-use regex::Regex;
-use std::{
-    fs::File,
-    io::{BufRead, BufReader, BufWriter},
-    path::{Path, PathBuf},
-    str::from_utf8,
-};
-
-/// Options for filtering reads from a FASTQ file.
-#[derive(Debug, Parser)]
-pub struct FastqFilterOpts {
-    /// Get info about this HTS file.
-    #[clap(name = "HTS")]
-    hts_path: PathBuf,
-
-    /// Regular expression to match against the read names.
-    #[clap(short, long, conflicts_with = "id_list_path")]
-    regex: Option<Regex>,
-
-    /// Text file containing all read names to filter.
-    #[clap(
-        short = 'f',
-        long = "id-file",
-        value_name = "FILE",
-        conflicts_with = "regex"
-    )]
-    id_list_path: Option<PathBuf>,
-
-    /// Output file name.
-    #[clap(short, long)]
-    output: Option<PathBuf>,
-
-    /// Keep the records that match, instead of discarding them.
-    #[clap(short, long)]
-    keep: bool,
-}
-
-impl CliOpt for FastqFilterOpts {
-    fn exec(&self) -> anyhow::Result<()> {
-        match (self.regex.is_some(), self.id_list_path.is_some()) {
-            (true, true) => {
-                // this should be excluded by the CLI
-                bail!(FastqFilterError::CannotSpecifyRegexAndIdFile)
-            }
-            (true, false) => self.filter_with_id_regex(),
-            (false, true) => self.filter_with_id_file(),
-            (false, false) => bail!(FastqFilterError::FilterCannotBeEmpty),
-        }
-    }
-}
-
-impl FastqFilterOpts {
-    /// Return what type of writer to use here (STDOUT, a file, or something else)
-    fn writer_output(&self) -> Result<Box<dyn Write>, io::Error> {
-        match self.output {
-            Some(ref path) => File::open(path).map(|f| Box::new(f) as Box<dyn Write>),
-            None => Ok(Box::new(io::stdout())),
-        }
-    }
-
-    /// Filter out records using a sorted ID file to match against.
-    fn filter_with_id_file(&self) -> anyhow::Result<()> {
-        Ok(())
-    }
-
-    /// Filter out records using a regular expression to match against record IDs.
-    fn filter_with_id_regex(&self) -> anyhow::Result<()> {
-        Ok(())
-    }
-
-    /// Filter out records containing a provided sequence.
-    fn filter_seq(&self) -> anyhow::Result<()> {
-        Ok(())
-    }
-
-    /// Filter out records based on its quality scores.
-    fn filter_qual(&self) -> anyhow::Result<()> {
-        Ok(())
-    }
-}
+pub use opts::FastqFilterOpts;
 
 /// Filter out reads according to a list of IDs
 /// Assumes a sorted Fastx file and a sorted list of IDs
