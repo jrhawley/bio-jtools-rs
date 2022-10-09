@@ -75,6 +75,15 @@ impl FastqFilterOpts {
         // writer for the output file (or STDOUT)
         let writer = self.writer_output()?;
 
+        // initialize the iter struct
+        filt_iter.get_next_id(&mut id_reader)?;
+        filt_iter.get_next_record(&mut fq_reader)?;
+
+        loop {
+            filt_iter.assert_ids_are_sorted()?;
+            filt_iter.assert_records_are_sorted()?;
+        }
+
         Ok(())
     }
 

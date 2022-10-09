@@ -40,17 +40,17 @@ impl<'a> FastqFilterIter<'a> {
     }
 
     /// Retrieve the previous ID in the filter file
-    fn prev_filter_id(&self) -> Option<&String> {
+    pub fn prev_filter_id(&self) -> Option<&String> {
         self.prev_id.as_ref()
     }
 
     /// Retrieve the current ID in the filter file
-    fn curr_filter_id(&self) -> Option<&String> {
+    pub fn curr_filter_id(&self) -> Option<&String> {
         self.curr_id.as_ref()
     }
 
     /// Retrieve the ID of the previous record
-    fn prev_record_id(&self) -> Option<&[u8]> {
+    pub fn prev_record_id(&self) -> Option<&[u8]> {
         match &self.prev_record {
             Some(r) => Some(r.id()),
             None => None,
@@ -58,7 +58,7 @@ impl<'a> FastqFilterIter<'a> {
     }
 
     /// Retrieve the ID of the current record
-    fn curr_record_id(&self) -> Option<&[u8]> {
+    pub fn curr_record_id(&self) -> Option<&[u8]> {
         match &self.curr_record {
             Some(r) => Some(r.id()),
             None => None,
@@ -66,7 +66,7 @@ impl<'a> FastqFilterIter<'a> {
     }
 
     /// Retrieve the next ID form the ID file
-    fn get_next_id(
+    pub fn get_next_id(
         &mut self,
         id_reader: &mut Lines<BufReader<File>>,
     ) -> Result<(), FastqFilterError> {
@@ -81,7 +81,7 @@ impl<'a> FastqFilterIter<'a> {
     }
 
     /// Retrieve the next record form the FASTQ file
-    fn get_next_record(
+    pub fn get_next_record(
         &mut self,
         fq_reader: &'a mut FastqReader<File>,
     ) -> Result<(), FastqFilterError> {
@@ -93,5 +93,33 @@ impl<'a> FastqFilterIter<'a> {
         };
 
         Ok(())
+    }
+
+    /// Check that the the file IDs are in order
+    pub fn assert_ids_are_sorted(&self) -> Result<(), FastqFilterError> {
+        match (self.curr_filter_id(), self.prev_filter_id()) {
+            (Some(curr), Some(prev)) => {
+                if curr < prev {
+                    Ok(())
+                } else {
+                    Err(FastqFilterError::IdFileNotSorted)
+                }
+            }
+            (_, _) => Ok(()),
+        }
+    }
+
+    /// Check that the the file IDs are in order
+    pub fn assert_records_are_sorted(&self) -> Result<(), FastqFilterError> {
+        match (self.curr_record_id(), self.prev_record_id()) {
+            (Some(curr), Some(prev)) => {
+                if curr < prev {
+                    Ok(())
+                } else {
+                    Err(FastqFilterError::FastqNotSorted)
+                }
+            }
+            (_, _) => Ok(()),
+        }
     }
 }

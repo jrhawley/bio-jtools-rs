@@ -27,4 +27,10 @@ pub enum FastqFilterError {
 
     #[error("FASTQ file is empty.")]
     EmptyFastqFile,
+
+    #[error("IDs are not sorted. Please sort with `sort -n`.")]
+    IdFileNotSorted,
+
+    #[error("FASTQ is not sorted. Please sort with `(z)cat | paste - - - - | sort -n | tr -s \"\t\" \"\n\"`.")]
+    FastqNotSorted,
 }
