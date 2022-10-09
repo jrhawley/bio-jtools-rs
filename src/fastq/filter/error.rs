@@ -17,13 +17,13 @@ pub enum FastqFilterError {
     IdFileCannotBeOpened,
 
     #[error("Cannot parse first line in ID file.")]
-    CannotParseFirstIdFileLine,
+    CannotParseIdFileLine,
 
     #[error("ID file is empty.")]
     EmptyIdFile,
 
     #[error("Cannot parse first record in FASTQ file.")]
-    CannotParseFirstFastqRecord,
+    CannotParseFastqRecord,
 
     #[error("FASTQ file is empty.")]
     EmptyFastqFile,
