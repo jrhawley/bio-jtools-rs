@@ -9,60 +9,89 @@ use std::{
 
 /// Helper struct for iterating through a FASTQ file and IDs.
 pub struct FastqFilterIter<'a> {
-    /// Line reader for the IDs to be filtered
-    id_file: Lines<BufReader<File>>,
-
-    /// FASTQ record reader
-    reader: FastqReader<File>,
-
     /// The previous ID that was handled
-    prev_id: &'a str,
+    prev_id: Option<String>,
 
     /// The current ID being handled
-    curr_id: &'a str,
+    curr_id: Option<String>,
 
     /// The previous record being handled
-    prev_record: &'a SequenceRecord<'a>,
+    prev_record: Option<SequenceRecord<'a>>,
 
     /// The current record being handled
-    curr_record: &'a SequenceRecord<'a>,
+    curr_record: Option<SequenceRecord<'a>>,
 }
 
-impl<'a> TryFrom<&FastqFilterOpts> for FastqFilterIter<'a> {
-    type Error = FastqFilterError;
+impl<'a> Default for FastqFilterIter<'a> {
+    fn default() -> Self {
+        Self {
+            prev_id: None,
+            curr_id: None,
+            prev_record: None,
+            curr_record: None,
+        }
+    }
+}
 
-    fn try_from(value: &FastqFilterOpts) -> Result<Self, Self::Error> {
-        let id_file = value.get_id_file_lines()?;
+impl<'a> FastqFilterIter<'a> {
+    /// Create a new iterator object
+    pub fn new() -> Self {
+        Self::default()
+    }
 
-        // first ID in the ID file
-        let mut prev_id = match id_file.next() {
-            Some(Ok(id)) => id.to_lowercase(),
-            Some(Err(_)) => return Err(FastqFilterError::CannotParseFirstIdFileLine),
-            None => return Err(FastqFilterError::EmptyIdFile),
+    /// Retrieve the previous ID in the filter file
+    fn prev_filter_id(&self) -> Option<&String> {
+        self.prev_id.as_ref()
+    }
+
+    /// Retrieve the current ID in the filter file
+    fn curr_filter_id(&self) -> Option<&String> {
+        self.curr_id.as_ref()
+    }
+
+    /// Retrieve the ID of the previous record
+    fn prev_record_id(&self) -> Option<&[u8]> {
+        match &self.prev_record {
+            Some(r) => Some(r.id()),
+            None => None,
+        }
+    }
+
+    /// Retrieve the ID of the current record
+    fn curr_record_id(&self) -> Option<&[u8]> {
+        match &self.curr_record {
+            Some(r) => Some(r.id()),
+            None => None,
+        }
+    }
+
+    /// Retrieve the next ID form the ID file
+    fn get_next_id(
+        &mut self,
+        id_reader: &mut Lines<BufReader<File>>,
+    ) -> Result<(), FastqFilterError> {
+        self.prev_id = self.curr_id.to_owned();
+        self.curr_id = match id_reader.next() {
+            Some(Ok(s)) => Some(s),
+            Some(Err(_)) => return Err(FastqFilterError::CannotParseIdFileLine),
+            None => None,
         };
 
-        // copy the first ID for setup
-        let mut curr_id = prev_id.clone();
+        Ok(())
+    }
 
-        // Reader for the FASTQ file
-        let mut reader = value.get_hts_reader();
-
-        // name of the first record in the FASTQ file
-        let mut prev_record = match reader.next() {
-            Some(Ok(seq)) => seq,
-            Some(Err(_)) => return Err(FastqFilterError::CannotParseFirstFastqRecord),
-            None => return Err(FastqFilterError::EmptyFastqFile),
+    /// Retrieve the next record form the FASTQ file
+    fn get_next_record(
+        &mut self,
+        fq_reader: &'a mut FastqReader<File>,
+    ) -> Result<(), FastqFilterError> {
+        self.prev_record = self.curr_record.to_owned();
+        self.curr_record = match fq_reader.next() {
+            Some(Ok(seq)) => Some(seq),
+            Some(Err(_)) => return Err(FastqFilterError::CannotParseFastqRecord),
+            None => None,
         };
 
-        let curr_record = prev_record.clone();
-
-        Ok(Self {
-            id_file,
-            reader,
-            prev_id: prev_id.as_str(),
-            curr_id: curr_id.as_str(),
-            prev_record: &&prev_record,
-            curr_record: &curr_record,
-        })
+        Ok(())
     }
 }
