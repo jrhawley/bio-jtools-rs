@@ -66,15 +66,14 @@ impl RecordFilter for FastqFilterOpts {
 impl FastqFilterOpts {
     /// Filter out records using a sorted ID file to match against.
     fn filter_with_id_file(&self) -> anyhow::Result<()> {
-        let mut filt_iter = FastqFilterIter::try_from(self)?;
-
-        let mut prev_record_name = from_utf8(&prev_record.id()).unwrap().to_lowercase();
-        let mut cur_record_name = prev_record_name.clone();
+        let mut id_reader = self.get_id_file_lines()?;
+        let mut fq_reader = self.get_hts_reader();
+        let mut filt_iter = FastqFilterIter::new();
 
         let mut deal_with_remaining_reads = false;
 
-        // writer for the output Fastx file
-        let writer = self.writer_output();
+        // writer for the output file (or STDOUT)
+        let writer = self.writer_output()?;
 
         Ok(())
     }
