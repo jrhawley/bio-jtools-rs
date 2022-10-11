@@ -40,13 +40,19 @@ impl<'a> FastqFilterIter<'a> {
     }
 
     /// Retrieve the previous ID in the filter file
-    pub fn prev_filter_id(&self) -> Option<&String> {
-        self.prev_id.as_ref()
+    pub fn prev_filter_id(&self) -> Option<&[u8]> {
+        match self.prev_id {
+            Some(id) => Some(id.as_bytes()),
+            None => None,
+        }
     }
 
     /// Retrieve the current ID in the filter file
-    pub fn curr_filter_id(&self) -> Option<&String> {
-        self.curr_id.as_ref()
+    pub fn curr_filter_id(&self) -> Option<&[u8]> {
+        match self.curr_id {
+            Some(id) => Some(id.as_bytes()),
+            None => None,
+        }
     }
 
     /// Retrieve the ID of the previous record
