@@ -1,6 +1,6 @@
 //! Helper structs and methods for iterating through a FASTQ file and IDs.
 
-use super::{FastqFilterError, FastqFilterOpts};
+use super::FastqFilterError;
 use needletail::parser::{FastqReader, FastxReader, SequenceRecord};
 use std::{
     fs::File,
