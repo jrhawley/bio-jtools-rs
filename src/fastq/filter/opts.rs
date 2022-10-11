@@ -3,13 +3,12 @@
 use crate::{cli::CliOpt, fastq::filter::FastqFilterError, record::filter::RecordFilter};
 use anyhow::bail;
 use clap::Parser;
-use needletail::{parse_fastx_file, parser::FastqReader, FastxReader};
+use needletail::{parser::FastqReader, FastxReader};
 use regex::Regex;
 use std::{
     fs::File,
-    io::{self, BufRead, BufReader, Read},
+    io::{self, BufRead, BufReader},
     path::PathBuf,
-    str::from_utf8,
 };
 
 use super::iter::FastqFilterIter;
