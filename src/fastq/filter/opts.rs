@@ -79,9 +79,36 @@ impl FastqFilterOpts {
         filt_iter.get_next_id(&mut id_reader)?;
         filt_iter.get_next_record(&mut fq_reader)?;
 
-        loop {
+        // this loop iterates over both files simultaneously
+        while filt_iter.curr_record().is_some() && filt_iter.curr_filter_id().is_some() {
             filt_iter.assert_ids_are_sorted()?;
             filt_iter.assert_records_are_sorted()?;
+            if filt_iter.curr_record_id() < filt_iter.curr_filter_id() {
+                if !self.keep {
+                    // unwrap is guaranteed because of the while loop condition
+                    filt_iter.curr_record().unwrap().write(&mut writer, None)?;
+                }
+
+                // update the records
+                filt_iter.get_next_record(&mut fq_reader);
+
+                // check if there is a subsequent record in the FASTQ
+                // TODO: Start here
+                if filt_iter.curr_record().is_some() {}
+            } else if filt_iter.curr_record_id() > filt_iter.curr_filter_id() {
+            } else {
+            }
+        }
+
+        // If all of the IDs have been exhausted but there are still records to write,,
+        // write them without comparing against the IDs.
+        // We can assume this because the FASTQ and ID file are both sorted.
+        if deal_with_remaining_reads && !self.keep {
+            while let Some(Ok(record)) = fq_reader.next() {
+                    record.write(&mut writer, None)?;
+                }
+            }
+            writer.finish()?;
         }
 
         Ok(())

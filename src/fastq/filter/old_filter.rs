@@ -50,21 +50,7 @@ pub fn filter(hts: &HtsFile, ids: &Path, out_hts: &Path, keep: bool) {
         Err(e) => panic!("{}", e),
     };
 
-    //     // step through records and IDs
-    //     while let Some(record) = reader.next() {
-    //         let seq = record.expect("invalid record");
-    //     }
-
     //     loop {
-    //         // panic if IDs aren't sorted
-    //         if &cur_id < &prev_id {
-    //             panic!("IDs aren't sorted. Please sort with `(z)cat | paste | sort -n`")
-    //         }
-    //         // panic if SAM/BAM isn't name-sorted
-    //         if &cur_record_name < &prev_record_name {
-    //             panic!("HTS file isn't sorted. Please sort with `(z)cat {input} | paste - - - - | sort | tr -s "\t" "\n" > {input}.sorted.fastq`")
-    //         }
-
     //         // decide what to do with cur_record, depending on how it relates to cur_id
     //         // write or discard record if the IDs are ahead of the reads
     //         if &cur_record_name < &cur_id {
@@ -121,15 +107,5 @@ pub fn filter(hts: &HtsFile, ids: &Path, out_hts: &Path, keep: bool) {
     //                 Err(_) => panic!("Error parsing record in HTS file"),
     //             }
     //         }
-    //     }
-
-    //     // if all of the IDs have been exhausted but we still have records to write
-    //     // write them without comparing against IDs
-    //     if deal_with_remaining_reads && !keep {
-    //         for read in reader {
-    //             let record = read.unwrap();
-    //             writer.write(&record).unwrap();
-    //         }
-    //         writer.finish().unwrap();
     //     }
 }
