@@ -71,6 +71,11 @@ impl<'a> FastqFilterIter<'a> {
         }
     }
 
+    /// Retrieve the current record being processed
+    pub fn curr_record(&self) -> Option<&SequenceRecord> {
+        self.curr_record.as_ref()
+    }
+
     /// Retrieve the next ID form the ID file
     pub fn get_next_id(
         &mut self,
