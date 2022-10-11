@@ -72,7 +72,7 @@ impl FastqFilterOpts {
         let mut deal_with_remaining_reads = false;
 
         // writer for the output file (or STDOUT)
-        let writer = self.writer_output()?;
+        let mut writer = self.writer_output()?;
 
         // initialize the iter struct
         filt_iter.get_next_id(&mut id_reader)?;
@@ -83,6 +83,8 @@ impl FastqFilterOpts {
             filt_iter.assert_ids_are_sorted()?;
             filt_iter.assert_records_are_sorted()?;
             if filt_iter.curr_record_id() < filt_iter.curr_filter_id() {
+                // if the record is before the filtering ID and we are not keeping the filtering IDs
+                // then we should write it to the output
                 if !self.keep {
                     // unwrap is guaranteed because of the while loop condition
                     filt_iter.curr_record().unwrap().write(&mut writer, None)?;
@@ -90,12 +92,25 @@ impl FastqFilterOpts {
 
                 // update the records
                 filt_iter.get_next_record(&mut fq_reader);
-
-                // check if there is a subsequent record in the FASTQ
-                // TODO: Start here
-                if filt_iter.curr_record().is_some() {}
             } else if filt_iter.curr_record_id() > filt_iter.curr_filter_id() {
+                // if the record is after the filtering ID, don't do anything with the current record right away
+                filt_iter.get_next_id(&mut id_reader)?;
+
+                // if there are no more IDs to process, be sure to deal with the remaining records
+                // outside of the present loop
+                if filt_iter.curr_filter_id().is_none() {
+                    // unwrap is guaranteed because of the while loop condition
+                    filt_iter.curr_record().unwrap().write(&mut writer, None)?;
+                    deal_with_remaining_reads = true;
+                }
             } else {
+                if self.keep {
+                    // unwrap is guaranteed because of the while loop condition
+                    filt_iter.curr_record().unwrap().write(&mut writer, None)?;
+                }
+
+                // update the records
+                filt_iter.get_next_record(&mut fq_reader)?;
             }
         }
 
@@ -104,10 +119,8 @@ impl FastqFilterOpts {
         // We can assume this because the FASTQ and ID file are both sorted.
         if deal_with_remaining_reads && !self.keep {
             while let Some(Ok(record)) = fq_reader.next() {
-                    record.write(&mut writer, None)?;
-                }
+                record.write(&mut writer, None)?;
             }
-            writer.finish()?;
         }
 
         Ok(())
