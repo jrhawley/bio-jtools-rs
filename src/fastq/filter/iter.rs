@@ -41,7 +41,7 @@ impl<'a> FastqFilterIter<'a> {
 
     /// Retrieve the previous ID in the filter file
     pub fn prev_filter_id(&self) -> Option<&[u8]> {
-        match self.prev_id {
+        match &self.prev_id {
             Some(id) => Some(id.as_bytes()),
             None => None,
         }
@@ -49,7 +49,7 @@ impl<'a> FastqFilterIter<'a> {
 
     /// Retrieve the current ID in the filter file
     pub fn curr_filter_id(&self) -> Option<&[u8]> {
-        match self.curr_id {
+        match &self.curr_id {
             Some(id) => Some(id.as_bytes()),
             None => None,
         }
@@ -81,7 +81,7 @@ impl<'a> FastqFilterIter<'a> {
         &mut self,
         id_reader: &mut Lines<BufReader<File>>,
     ) -> Result<(), FastqFilterError> {
-        self.prev_id = self.curr_id.to_owned();
+        self.prev_id.clone_from(&self.curr_id);
         self.curr_id = match id_reader.next() {
             Some(Ok(s)) => Some(s),
             Some(Err(_)) => return Err(FastqFilterError::CannotParseIdFileLine),
@@ -96,9 +96,9 @@ impl<'a> FastqFilterIter<'a> {
         &mut self,
         fq_reader: &'a mut FastqReader<File>,
     ) -> Result<(), FastqFilterError> {
-        self.prev_record = self.curr_record.to_owned();
+        self.prev_record.clone_from(&self.curr_record);
         self.curr_record = match fq_reader.next() {
-            Some(Ok(seq)) => Some(seq),
+            Some(Ok(seq)) => Some(seq.clone()),
             Some(Err(_)) => return Err(FastqFilterError::CannotParseFastqRecord),
             None => None,
         };
