@@ -88,7 +88,7 @@ impl<'record> FastqFilterIter<'record> {
             None => None,
         };
 
-        Ok(())
+        self.assert_ids_are_sorted()
     }
 
     /// Retrieve the next record form the FASTQ file
@@ -119,9 +119,8 @@ impl<'record> FastqFilterIter<'record> {
 
         Ok(())
     }
-
-    /// Check that the the file IDs are in order
-    pub fn assert_ids_are_sorted(&self) -> Result<(), FastqFilterError> {
+    /// Check that the the file IDs are in sorted order
+    fn assert_ids_are_sorted(&self) -> Result<(), FastqFilterError> {
         match (self.curr_filter_id(), self.prev_filter_id()) {
             (Some(curr), Some(prev)) => {
                 if curr < prev {
