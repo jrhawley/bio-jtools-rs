@@ -139,7 +139,7 @@ impl FastqFilterOpts {
         };
 
         // open the file with the IDs to filter
-        let mut id_file = match File::open(ids) {
+        let id_file = match File::open(ids) {
             Ok(f) => BufReader::new(f).lines(),
             Err(_) => return Err(FastqFilterError::IdFileCannotBeOpened),
         };
