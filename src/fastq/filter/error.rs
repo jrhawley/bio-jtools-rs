@@ -39,4 +39,7 @@ pub enum FastqFilterError {
 
     #[error("FASTQ is not sorted. Please sort with `(z)cat | paste - - - - | sort -n | tr -s \"\t\" \"\n\"`.")]
     FastqNotSorted,
+
+    #[error("Cannot extract a record ID from `None` option.")]
+    NoRecordIdFromNone,
 }
