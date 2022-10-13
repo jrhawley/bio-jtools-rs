@@ -1,5 +1,8 @@
 //! Error handling when filtering records from a FASTQ file.
 
+use std::string::FromUtf8Error;
+
+use needletail::errors::ParseError;
 use thiserror::Error;
 
 #[derive(Debug, Error, PartialEq)]
@@ -22,8 +25,11 @@ pub enum FastqFilterError {
     #[error("ID file is empty.")]
     EmptyIdFile,
 
-    #[error("Cannot parse first record in FASTQ file.")]
-    CannotParseFastqRecord,
+    #[error("Cannot parse record in FASTQ file because of the following error. {0}")]
+    CannotParseFastqRecord(ParseError),
+
+    #[error("Cannot parse record ID in FASTQ file because of the following error. {0}")]
+    CannotParseFastqRecordId(FromUtf8Error),
 
     #[error("FASTQ file is empty.")]
     EmptyFastqFile,

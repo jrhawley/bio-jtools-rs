@@ -67,6 +67,7 @@ impl FastqFilterOpts {
     fn filter_with_id_file(&self) -> anyhow::Result<()> {
         let mut id_reader = self.get_id_file_lines()?;
         let mut fq_reader = self.get_hts_reader();
+
         let mut filt_iter = FastqFilterIter::new();
 
         let mut deal_with_remaining_reads = false;
