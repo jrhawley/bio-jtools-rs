@@ -60,28 +60,19 @@ impl FastqFilterIter {
     }
 
     /// Update the previous record ID
-    pub fn set_prev_record_id(
-        &mut self,
-        curr_record: &Option<Result<SequenceRecord, ParseError>>,
-    ) -> Result<(), FastqFilterError> {
+    pub fn set_prev_record_id(&mut self, rec: &SequenceRecord) -> Result<(), FastqFilterError> {
         // Instead of storing the entire record, we are going to only store the ID from the record that was just processed.
         // To do this, we create a string of the ID from the byte slice that make up the record's ID.
         // (FASTQ files are ASCII encoded, so from_utf8 should always work).
         // The ID byte slice is copied to a new `Vec`, but this is less expensive than copying the entire contents of the FASTQ record.
         // This is coerced into a String, which is owned by `self` and not `fq_reader`.
         // This avoids having multiple simultaneous mutable references to `fq_reader`.
-        match curr_record {
-            Some(Ok(rec)) => {
-                self.prev_record = match String::from_utf8(rec.id().to_vec()) {
-                    Ok(val) => Some(val),
-                    Err(e) => return Err(FastqFilterError::CannotParseFastqRecordId(e)),
-                };
+        self.prev_record = match String::from_utf8(rec.id().to_vec()) {
+            Ok(val) => Some(val),
+            Err(e) => return Err(FastqFilterError::CannotParseFastqRecordId(e)),
+        };
 
-                Ok(())
-            }
-            Some(Err(e)) => Err(FastqFilterError::CannotParseFastqRecord(e.clone())),
-            None => Err(FastqFilterError::NoRecordIdFromNone),
-        }
+        Ok(())
     }
 
     /// Retrieve the next ID form the ID file
