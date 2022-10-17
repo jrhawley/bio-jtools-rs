@@ -7,7 +7,7 @@ use needletail::parse_fastx_file;
 use regex::Regex;
 use std::{
     fs::File,
-    io::{BufRead, BufReader, BufWriter},
+    io::{self, BufRead, BufReader, BufWriter, Write},
     path::{Path, PathBuf},
     str::from_utf8,
 };
