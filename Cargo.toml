@@ -37,8 +37,8 @@ name = "bjt"
 path = "src/main.rs"
 
 [build-dependencies]
-cargo-make = "0.36.1"
+cargo-make = "0.36"
 
 [dev-dependencies]
-cargo-nextest = "0.9.38"
+cargo-nextest = "0.9"
 
