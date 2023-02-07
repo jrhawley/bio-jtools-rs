@@ -6,7 +6,6 @@ mod align;
 mod cli;
 mod data;
 mod fastq;
-mod interval;
 mod record;
 mod utils;
 
