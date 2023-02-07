@@ -90,7 +90,7 @@ impl SeqDir {
             // if no regex match, return the default SeqDir initialization
             None => SeqDir {
                 path: path.to_path_buf(),
-                date: Local::today().naive_local(),
+                date: Local::now().date_naive(),
                 instrument: String::from(""),
                 run: 0,
                 position: '?',
