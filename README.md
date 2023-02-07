@@ -41,22 +41,3 @@ YYMMDD_INSTID_RUN_FCID/
 ├── setup.log                   # a log of what operations were performed with `bjt org`
 └── Snakefile                   # Snakemake workflow file
 ```
-
-## Benchmarking
-
-Benchmarks on run in a Windows 10 computer, Intel i7 960 @ 3.2 GHz processor with 12 GB DDR3 of RAM.
-Times are listed +/- standard deviation, using `hyperfine --warmup 3`.
-
-### info
-
-| File                                                                                             | # Reads   | t<sub>gzip</sub>    | t<sub>plain</sub>   |
-| ------------------------------------------------------------------------------------------------ | --------- | ------------------- | ------------------- |
-| [`examples/SRR0000001.fastq`](examples/)                                                         | 2 500     | 26.2 ms +/- 1.8 ms  | 22.8 ms +/- 3.2 ms  |
-| [`examples/SRR0000002.fastq`](examples/)                                                         | 25 000    | 73.0 ms +/- 7.0 ms  | 27.5 ms +/- 3.2 ms  |
-| [`M_abscessus_HiSeq.fq`](https://lh3.github.io/2020/05/17/fast-high-level-programming-languages) | 5 682 010 | 8.701 s +/- 0.291 s | 1.026 s +/- 0.011 s |
-
-## Roadmap
-
-### filter
-
-Filtering FASTX files.

@@ -1,6 +1,6 @@
 [package]
 name = "bio-jtools"
-version = "2022.10.16"
+version = "0.2.0"
 authors = ["James Hawley <developer@jrhawley.ca>"]
 edition = "2021"
 description = "A suite of bioinformatics tools for interacting with high throughput sequencing (HTS) data"
@@ -41,4 +41,3 @@ cargo-make = "0.36"
 
 [dev-dependencies]
 cargo-nextest = "0.9"
-
