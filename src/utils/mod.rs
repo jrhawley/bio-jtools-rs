@@ -4,9 +4,6 @@
 
 pub(crate) mod formats;
 
-use crate::align;
-use crate::fastq;
-use bam::{BamReader, BamWriter, SamReader, SamWriter};
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Copy, PartialEq)]
@@ -116,39 +113,6 @@ impl HtsFile {
     /// HTS file type
     pub fn filetype(&self) -> Hts {
         self.hts_type
-    }
-
-    /// Filter reads in an HTS file by their name.
-    pub fn filter(&self, ids: &Path, out: &Path, keep: bool) {
-        // match on the combination of input/output files
-        match (self.filetype(), detect_filetype(out)) {
-            // BAM => BAM
-            (Hts::Align(Align::Bam), Some(Hts::Align(Align::Bam))) => {
-                let mut reader = BamReader::from_path(self.path(), 3).unwrap();
-                let mut writer = BamWriter::from_path(out, reader.header().clone()).unwrap();
-                align::filter::filter(&mut reader, ids, &mut writer, keep)
-            }
-            // BAM => SAM
-            (Hts::Align(Align::Bam), Some(Hts::Align(Align::Sam))) => {
-                let mut reader = BamReader::from_path(self.path(), 3).unwrap();
-                let mut writer = SamWriter::from_path(out, reader.header().clone()).unwrap();
-                align::filter::filter(&mut reader, ids, &mut writer, keep)
-            }
-            // SAM => BAM
-            (Hts::Align(Align::Sam), Some(Hts::Align(Align::Bam))) => {
-                let mut reader = SamReader::from_path(self.path()).unwrap();
-                let mut writer = BamWriter::from_path(out, reader.header().clone()).unwrap();
-                align::filter::filter(&mut reader, ids, &mut writer, keep)
-            }
-            // SAM => SAM
-            (Hts::Align(Align::Sam), Some(Hts::Align(Align::Sam))) => {
-                let mut reader = SamReader::from_path(self.path()).unwrap();
-                let mut writer = SamWriter::from_path(out, reader.header().clone()).unwrap();
-                align::filter::filter(&mut reader, ids, &mut writer, keep)
-            }
-            (Hts::Fastx(_), Some(Hts::Fastx(_))) => fastq::filter::filter(self, ids, out, keep),
-            _ => unimplemented!(),
-        }
     }
 }
 

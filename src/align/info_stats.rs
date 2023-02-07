@@ -146,7 +146,7 @@ impl SamBamCramStats {
         }
 
         // run ID
-        let run_id = id_splits.next();
+        let _run_id = id_splits.next();
 
         // flow cell ID
         let fcid = id_splits.next();

@@ -1,99 +1,13 @@
-//! Filter out reads from a FASTQ file.
-
-use crate::{cli::CliOpt, utils::HtsFile};
-use anyhow::bail;
-use clap::Parser;
+use crate::utils::HtsFile;
 use needletail::parse_fastx_file;
-use regex::Regex;
 use std::{
     fs::File,
     io::{self, BufRead, BufReader, BufWriter, Write},
     path::{Path, PathBuf},
+    io::{BufRead, BufReader, BufWriter},
+    path::Path,
     str::from_utf8,
 };
-use thiserror::Error;
-
-#[derive(Debug, Error, PartialEq)]
-pub enum FastqFilterError {
-    #[error("Cannot specify both a regular expression and a file with exact IDs.")]
-    CannotSpecifyRegexAndIdFile,
-
-    #[error("You must filter against something, like a regular expression or file containing exact IDs.")]
-    FilterCannotBeEmpty,
-}
-
-/// Options for filtering reads from a FASTQ file.
-#[derive(Debug, Parser)]
-pub struct FastqFilterOpts {
-    /// Get info about this HTS file.
-    #[clap(name = "HTS")]
-    hts_path: PathBuf,
-
-    /// Regular expression to match against the read names.
-    #[clap(short, long, conflicts_with = "id_list_path")]
-    regex: Option<Regex>,
-
-    /// Text file containing all read names to filter.
-    #[clap(
-        short = 'f',
-        long = "id-file",
-        value_name = "FILE",
-        conflicts_with = "regex"
-    )]
-    id_list_path: Option<PathBuf>,
-
-    /// Output file name.
-    #[clap(short, long)]
-    output: Option<PathBuf>,
-
-    /// Keep the records that match, instead of discarding them.
-    #[clap(short, long)]
-    keep: bool,
-}
-
-impl CliOpt for FastqFilterOpts {
-    fn exec(&self) -> anyhow::Result<()> {
-        match (self.regex.is_some(), self.id_list_path.is_some()) {
-            (true, true) => {
-                // this should be excluded by the CLI
-                bail!(FastqFilterError::CannotSpecifyRegexAndIdFile)
-            }
-            (true, false) => self.filter_with_id_regex(),
-            (false, true) => self.filter_with_id_file(),
-            (false, false) => bail!(FastqFilterError::FilterCannotBeEmpty),
-        }
-    }
-}
-
-impl FastqFilterOpts {
-    /// Return what type of writer to use here (STDOUT, a file, or something else)
-    fn writer_output(&self) -> Result<Box<dyn Write>, io::Error> {
-        match self.output {
-            Some(ref path) => File::open(path).map(|f| Box::new(f) as Box<dyn Write>),
-            None => Ok(Box::new(io::stdout())),
-        }
-    }
-
-    /// Filter out records using a sorted ID file to match against.
-    fn filter_with_id_file(&self) -> anyhow::Result<()> {
-        Ok(())
-    }
-
-    /// Filter out records using a regular expression to match against record IDs.
-    fn filter_with_id_regex(&self) -> anyhow::Result<()> {
-        Ok(())
-    }
-
-    /// Filter out records containing a provided sequence.
-    fn filter_seq(&self) -> anyhow::Result<()> {
-        Ok(())
-    }
-
-    /// Filter out records based on its quality scores.
-    fn filter_qual(&self) -> anyhow::Result<()> {
-        Ok(())
-    }
-}
 
 /// Filter out reads according to a list of IDs
 /// Assumes a sorted Fastx file and a sorted list of IDs
@@ -130,9 +44,6 @@ pub fn filter(hts: &HtsFile, ids: &Path, out_hts: &Path, keep: bool) {
     let mut cur_record = prev_record.clone();
     let mut cur_record_name = prev_record_name.clone();
 
-    println!("{}", &cur_id);
-    println!("{}", &cur_record_name);
-
     let mut deal_with_remaining_reads = false;
 
     // writer for the output Fastx file
@@ -141,21 +52,7 @@ pub fn filter(hts: &HtsFile, ids: &Path, out_hts: &Path, keep: bool) {
         Err(e) => panic!("{}", e),
     };
 
-    //     // step through records and IDs
-    //     while let Some(record) = reader.next() {
-    //         let seq = record.expect("invalid record");
-    //     }
-
     //     loop {
-    //         // panic if IDs aren't sorted
-    //         if &cur_id < &prev_id {
-    //             panic!("IDs aren't sorted. Please sort with `(z)cat | paste | sort -n`")
-    //         }
-    //         // panic if SAM/BAM isn't name-sorted
-    //         if &cur_record_name < &prev_record_name {
-    //             panic!("HTS file isn't sorted. Please sort with `(z)cat {input} | paste - - - - | sort | tr -s "\t" "\n" > {input}.sorted.fastq`")
-    //         }
-
     //         // decide what to do with cur_record, depending on how it relates to cur_id
     //         // write or discard record if the IDs are ahead of the reads
     //         if &cur_record_name < &cur_id {
@@ -212,15 +109,5 @@ pub fn filter(hts: &HtsFile, ids: &Path, out_hts: &Path, keep: bool) {
     //                 Err(_) => panic!("Error parsing record in HTS file"),
     //             }
     //         }
-    //     }
-
-    //     // if all of the IDs have been exhausted but we still have records to write
-    //     // write them without comparing against IDs
-    //     if deal_with_remaining_reads && !keep {
-    //         for read in reader {
-    //             let record = read.unwrap();
-    //             writer.write(&record).unwrap();
-    //         }
-    //         writer.finish().unwrap();
     //     }
 }

@@ -1,5 +1,6 @@
 //! Filter alignments in a SAM/BAM/CRAM file.
 
+use crate::cli::CliOpt;
 use bam::{Record, RecordReader, RecordWriter};
 use clap::Parser;
 use regex::Regex;
@@ -7,8 +8,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::str::from_utf8;
-
-use crate::cli::CliOpt;
 
 /// Options for filtering alignments from a SAM/BAM/CRAM file.
 #[derive(Debug, Parser)]
