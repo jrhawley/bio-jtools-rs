@@ -1,8 +1,10 @@
 //! Command line interface options and parsing
 
 use crate::{
-    align::{filter::SamBamCramFilterOpts, info_stats::SamBamCramInfoOpts},
-    fastq::{filter::FastqFilterOpts, info_stats::FastqInfoOpts},
+    align::info_stats::SamBamCramInfoOpts,
+    fastq::info_stats::FastqInfoOpts,
+    // align::{filter::SamBamCramFilterOpts, info_stats::SamBamCramInfoOpts},
+    // fastq::{filter::FastqFilterOpts, info_stats::FastqInfoOpts},
 };
 use clap::{Parser, Subcommand};
 
@@ -69,13 +71,13 @@ pub(crate) enum FilterSubCmd {
     #[clap(visible_alias = "fa")]
     Fasta,
 
-    /// Filter a FASTQ file
-    #[clap(visible_alias = "fq")]
-    Fastq(FastqFilterOpts),
+    // /// Filter a FASTQ file
+    // #[clap(visible_alias = "fq")]
+    // Fastq(FastqFilterOpts),
 
-    /// Filter a SAM/BAM/CRAM file
-    #[clap(visible_aliases = &["sam", "cram"])]
-    Bam(SamBamCramFilterOpts),
+    // /// Filter a SAM/BAM/CRAM file
+    // #[clap(visible_aliases = &["sam", "cram"])]
+    // Bam(SamBamCramFilterOpts),
 
     /// Filter a BED file
     Bed,
@@ -85,8 +87,8 @@ impl CliOpt for FilterSubCmd {
     fn exec(&self) -> anyhow::Result<()> {
         match self {
             Self::Fasta => todo!(),
-            Self::Fastq(opts) => opts.exec(),
-            Self::Bam(opts) => opts.exec(),
+            // Self::Fastq(opts) => opts.exec(),
+            // Self::Bam(opts) => opts.exec(),
             Self::Bed => todo!(),
         }
     }
