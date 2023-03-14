@@ -36,10 +36,8 @@
             cargo-nextest
             rust-analyzer
           ];
-
-          shellHook = "";
         };
       }
-  );
+    );
 }
 
