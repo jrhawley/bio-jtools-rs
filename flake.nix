@@ -32,8 +32,11 @@
             cargo-audit
             cargo-deny
             cargo-edit
-            cargo-watch
+            cargo-make
             cargo-nextest
+            cargo-watch
+            gh
+            p7zip
             rust-analyzer
           ];
         };
