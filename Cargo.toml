@@ -1,12 +1,12 @@
 [package]
 name = "bio-jtools"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["James Hawley <developer@jrhawley.ca>"]
 edition = "2021"
-description = "A suite of bioinformatics tools for interacting with high throughput sequencing (HTS) data"
+description = "A suite of bioinformatics tools for interacting with high throughput sequencing data"
 license = "MIT"
-repository = "https://github.com/jrhawley/bio-jtools-rs/"
-homepage = "https://github.com/jrhawley/bio-jtools-rs/"
+repository = "https://gitlab.com/jrhawley/bio-jtools/"
+homepage = "https://gitlab.com/jrhawley/bio-jtools/"
 readme = "README.md"
 categories = ["command-line-utilities", "science"]
 keywords = ["bioinformatics", "cli", "fastq"]
